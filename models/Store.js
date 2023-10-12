@@ -1,0 +1,17 @@
+var db = require("../config/ConnectDB");
+
+const storeSchema = new db.mongoose.Schema(
+  {
+    user_id: { type: db.mongoose.Schema.Types.ObjectId, ref: "account" },
+    name: { type: String, required: true },
+    image: { type: String },
+    address: { type: Number },
+    is_active: { type: Boolean },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+let store = db.mongoose.model("store", storeSchema);
+module.exports = { store };
