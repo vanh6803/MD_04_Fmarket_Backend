@@ -1,4 +1,4 @@
-const e = require('express');
+const express = require('express');
 const models = require('../models/Category');  
 
 //product
@@ -39,10 +39,10 @@ exports.editCategory = async (req, res, next) => {
       obj.name = req.body.name;
       obj._id = id;
       if(req.file){
-        obj.image = req.file.path;
-      }else{
-        obj.image = "imgage errpr"
-      }
+      obj.image = req.file.path;
+    }else{
+      obj.image = "imgage errpr"
+    }
   
       try {
         await models.category.findByIdAndUpdate({ _id: id }, obj);
