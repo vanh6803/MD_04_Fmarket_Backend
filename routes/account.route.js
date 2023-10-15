@@ -4,7 +4,7 @@ const controller = require("../controllers/account.controller");
 const middleware = require("../middleware/auth.middleware");
 const multer = require("multer");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
-const cloudinary = require("../config/SetupCloudinary");
+const { cloudinary } = require("../config/SetupCloudinary");
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
@@ -22,7 +22,11 @@ router.get(
   controller.detailProfile
 );
 router.put("/edit-profile/:uid", middleware.checkToken, controller.editProfile);
-router.put("/change-password/:uid", middleware.checkToken, controller.resetPassword);
+router.put(
+  "/change-password/:uid",
+  middleware.checkToken,
+  controller.resetPassword
+);
 router.put(
   "/upload-avatar/:uid",
   middleware.checkToken,
