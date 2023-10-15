@@ -11,6 +11,8 @@ const register = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
+    console.log(`email: ${email}, password: ${password}`);
+
     //validate email password
     if (!email || !password) {
       return res
@@ -79,7 +81,7 @@ const login = async (req, res, next) => {
     const user = await model.account.findOne({ email });
 
     if (!user) {
-      return res.status(401).json({ code: 401, message: "Email not found" });
+      return res.status(404).json({ code: 404, message: "Email not found" });
     }
 
     if (user.isVerify == false) {
