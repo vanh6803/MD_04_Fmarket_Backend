@@ -3,7 +3,7 @@ let md = require('../models/Products');
 const list = async (req, res, next) => {
     try {
         // get list data and ref category
-        let listProduct = await md.product.find().populate("category_id");
+        let listProduct = await md.product.find().sort({_id: -1}).populate("category_id");
 
         if (listProduct) {
             res.status(200).json({
