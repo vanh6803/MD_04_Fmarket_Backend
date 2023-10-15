@@ -3,73 +3,85 @@ const models = require('../models/Category');
 
 //product
 // [get] /category/get-list
-exports.listCategory = async (req, res, next) => {
-    await models.category.find()
-                        .then(category => {
-                            res.json(category)
-                        }).catch(next);
+const listCategory = async (req, res, next) => {
+  try {
+    const category = await models.category.find();
+    if(!category){
+      return res.status(404).json({ code: 404, message: "no data  " });
+    }
+    return res.status(200)
+        .json({ code: 200, data: category, message: "get data successfully!" });
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
 };
 
 // [post] /category/add
-exports.addCategory = async (req, res, next) => {
-  if (req.method == "POST") {
+const addCategory = async (req, res, next) => {
+  try {
+    if (req.method == "POST") {
+      let obj = new models.category();
+      obj.name = req.body.name;
+      if(req.file){
+        obj.image = req.file.path;
+      }else{
+        return res.status(500).json({ code: 500, message: 'no file uploaded!' });
+      }
 
-    let obj = new models.category();
-    obj.name = req.body.name;
-    if(req.file){
-      obj.image = req.file.path;
-    }else{
-      obj.image = "imgage errpr"
+      await obj.save();
+      return res.status(200).json({ code: 200, message: "add successfully!" });
     }
-    try {
-      let newData = await obj.save();
-      console.log(newData);
-    } catch (error) {
-      console.log(error);
-    }
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
   }
 };
 
 // [post] /category/edit/:id
-exports.editCategory = async (req, res, next) => {
-
+const editCategory = async (req, res, next) => {
+  try {
     let id = req.params.id;
     if (req.method == "POST") {
       let obj = new models.category();
       obj.name = req.body.name;
       obj._id = id;
+
       if(req.file){
-      obj.image = req.file.path;
-    }else{
-      obj.image = "imgage errpr"
-    }
-  
-      try {
-        await models.category.findByIdAndUpdate({ _id: id }, obj);
-        console.log(newData);
-        // res.redirect("layout-list_product");
-      } catch (error) {
-        console.log(error);
+        obj.image = req.file.path;
+      }else{
+        return res.status(500).json({ code: 500, message: 'no file uploaded!' });
       }
+
+      await models.category.findByIdAndUpdate({ _id: id }, obj);
+      return res.status(200).json({ code: 200, message: "update successfully!" });
+      // res.redirect("layout-list_product");
+     
     } else {
         let id = req.params.id;
         let obj = await models.category.findById(id);
-        res.render("layout", { obj });
+        // res.render("layout", { obj });
     }
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
 };
 
 // [delete] /category/delete/:id
-exports.deleteCategory = async (req, res, next) => {
-  let id = req.params.id;
+const deleteCategory = async (req, res, next) => {
+  try {
+    let id = req.params.id;
 
-  if(req.method == 'POST'){
-    try {
-        await models.category.findByIdAndDelete({ _id: id });
-      } catch (error) {
-        console.log(error);
-      }
+    await models.category.findByIdAndDelete({ _id: id });
+    return res.status(200).json({ code: 200, message: "delete successfully!" });
+    
+    //   res.redirect("layout-list_product");
+  }catch(error){
+    return res.status(500).json({ code: 500, message: error.message });
   }
-  
-
-//   res.redirect("layout-list_product");
 };
+
+module.exports = {
+  listCategory,
+  addCategory,
+  editCategory,
+  deleteCategory
+}
