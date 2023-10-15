@@ -1,4 +1,5 @@
 var db = require("../config/ConnectDB");
+let mdCategory = require("../models/Category");
 
 const productSchema = new db.mongoose.Schema(
   {
