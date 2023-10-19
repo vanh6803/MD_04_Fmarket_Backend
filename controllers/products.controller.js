@@ -2,6 +2,7 @@ let md = require('../models/Products');
 
 const list = async (req, res, next) => {
     try {
+        // Phân trang
         let { page } = req.query;
         if (page == undefined) {
             page = 1;
@@ -9,8 +10,23 @@ const list = async (req, res, next) => {
         let pageSize = 10; // số lượng phần tử trong page
         let skipCount = (page - 1) * pageSize; // số lượng phần tử bỏ qua
 
+        let isCheck = null;
+        // Lọc theo category_id
+        let idCategorySearch = req.body.category_id;
+        if(typeof(idCategorySearch) != 'undefined') {
+            isCheck = {category_id: idCategorySearch}
+            console.log(isCheck);
+        }
+
+        // Lọc theo tên sản phẩm
+        let productName = req.body.name;
+        if(typeof(productName) != 'undefined') {
+            const isCheck = { name: productName }; // Search chuẩn tên mới nhận, chưa làm search
+            console.log(isCheck);
+        }
+
         // get list data and ref category
-        let listProduct = await md.product.find()
+        let listProduct = await md.product.find(isCheck)
             .skip(skipCount)
             .limit(pageSize)
             .sort({ _id: -1 })
