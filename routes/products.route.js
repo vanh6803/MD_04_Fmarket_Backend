@@ -19,4 +19,6 @@ router.put('/update/:uid', upload.single("image"), productsController.update);
 
 router.delete('/delete/:uid', productsController.remove);
 
+router.get('/detail/:uid', productsController.detail);
+
 module.exports = router;

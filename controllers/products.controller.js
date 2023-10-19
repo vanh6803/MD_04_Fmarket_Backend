@@ -2,18 +2,29 @@ let md = require('../models/Products');
 
 const list = async (req, res, next) => {
     try {
-        // get list data and ref category
-        let listProduct = await md.product.find().sort({_id: -1}).populate("category_id");
+        let { page } = req.query;
+        if (page == undefined) {
+            page = 1;
+        }
+        let pageSize = 10; // số lượng phần tử trong page
+        let skipCount = (page - 1) * pageSize; // số lượng phần tử bỏ qua
 
-        if (listProduct) {
+        // get list data and ref category
+        let listProduct = await md.product.find()
+            .skip(skipCount)
+            .limit(pageSize)
+            .sort({ _id: -1 })
+            .populate("category_id");
+
+        if (listProduct.length > 0) {
             res.status(200).json({
                 status: 200,
                 message: 'Get data successfully!',
                 data: listProduct
             });
         } else {
-            res.status(204).json({
-                status: 204,
+            res.status(404).json({
+                status: 404,
                 message: 'No data!'
             });
         }
@@ -78,7 +89,7 @@ const update = async (req, res, next) => {
             let productUpdate = req.body;
             console.log(objProduct);
             console.log(productUpdate);
-            await md.product.findByIdAndUpdate({_id: uid}, productUpdate, {new: true});
+            await md.product.findByIdAndUpdate({ _id: uid }, productUpdate, { new: true });
             res.status(200).json({
                 code: 200,
                 message: "Update successful product!"
@@ -89,7 +100,7 @@ const update = async (req, res, next) => {
                 message: "Not found product!"
             });
         }
-        
+
     } catch (error) {
         res.status(500).json({
             code: 500,
@@ -101,17 +112,42 @@ const update = async (req, res, next) => {
 const remove = async (req, res, next) => {
     try {
         let uid = req.params.uid;
-        let productRemove = await md.product.findByIdAndDelete({_id: uid});
-        if(productRemove) {
+        let productRemove = await md.product.findByIdAndDelete({ _id: uid });
+        if (productRemove) {
             res.status(200).json({
                 code: 200,
                 message: "Delete successful product!"
-            });    
+            });
         } else {
             res.status(404).json({
                 code: 404,
                 message: "Not found product!"
-            });   
+            });
+        }
+    } catch (error) {
+        res.status(500).json({
+            code: 500,
+            message: error.message
+        });
+    }
+}
+
+const detail = async (req, res, next) => {
+    try {
+        try {
+            let uid = req.params.uid;
+            let productDetail = await md.product.findById(uid).populate("category_id"); // ko tìm thấy id thì error
+            res.status(200).json({
+                code: 200,
+                message: "Update successful product!",
+                data: [productDetail]
+            });
+        } catch (error) {
+            res.status(404).json({
+                code: 404,
+                message: "Not found product!",
+                data: []
+            });
         }
     } catch (error) {
         res.status(500).json({
@@ -126,5 +162,6 @@ module.exports = {
     list,
     create,
     update,
-    remove
+    remove,
+    detail
 }
