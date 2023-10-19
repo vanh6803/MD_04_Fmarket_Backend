@@ -11,12 +11,14 @@ const accountSchema = new db.mongoose.Schema(
     address: { type: String },
     birthday: { type: String },
     token: { type: String },
-    confirm_email: { type: Boolean },
+    isVerify: { type: Boolean, default: false },
+    confirmationCode: { type: String },
+    confirmationExpiration: { type: Date },
     is_active: { type: Boolean },
     role_id: {
-      type: db.mongoose.Schema.Types.ObjectId,
-      ref: "role",
+      type: Number,
       required: true,
+      default: 0,
     },
   },
   {
@@ -28,4 +30,3 @@ let account = db.mongoose.model("account", accountSchema);
 module.exports = {
   account,
 };
-
