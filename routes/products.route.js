@@ -12,12 +12,7 @@ const storage = new CloudinaryStorage({
   },
 });
 const upload = multer({ storage });
-
-
-router.get('/', (req, res, next) => {
-    res.send("hehe");
-});
-
+router.get('/', productsController.list)
 router.post('/create', upload.single("image"), productsController.create);
 
 router.put('/update/:uid', upload.single("image"), productsController.update);

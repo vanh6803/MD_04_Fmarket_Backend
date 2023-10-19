@@ -8,8 +8,8 @@ const list = async (req, res, next) => {
         if (listProduct) {
             res.status(200).json({
                 status: 200,
-                msg: 'Get data successfully!',
-                result: listProduct
+                message: 'Get data successfully!',
+                data: listProduct
             });
         } else {
             res.status(204).json({
@@ -60,7 +60,6 @@ const create = async (req, res, next) => {
         res.status(200).json({
             code: 200,
             message: 'Added data successfully!',
-            data: [objProduct] // Vì đây là 1 object lên khi trả thêm [] để thành mảng
         });
 
     } catch (error) {
