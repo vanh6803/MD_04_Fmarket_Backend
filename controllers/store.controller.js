@@ -46,7 +46,7 @@ const detailStore = async (req, res, next) => {
 const deleteStore = async (req, res, next) => {
   try {
     const storeId = req.params.storeId;
-    const store = await storeModel.store.findById(storeId).populate("user_id");
+    const store = await storeModel.store.findById(storeId);
     if (!store) {
       return res.status(404).json({ code: 404, message: "Store not found" });
     }

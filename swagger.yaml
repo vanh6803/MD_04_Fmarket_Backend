@@ -1,63 +1,1009 @@
 openapi: 3.0.3
 info:
-  title: Swagger Petstore - OpenAPI 3.0
-  description: |-
-    This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about
-    Swagger at [https://swagger.io](https://swagger.io). In the third iteration of the pet store, we've switched to the design first approach!
-    You can now help us improve the API whether it's by making changes to the definition itself or to the code.
-    That way, with time, we can improve the API in general, and expose some of the new features in OAS3.
-
-    _If you're looking for the Swagger 2.0/OAS 2.0 version of Petstore, then click [here](https://editor.swagger.io/?url=https://petstore.swagger.io/v2/swagger.yaml). Alternatively, you can load via the `Edit > Load Petstore OAS 2.0` menu option!_
-    
-    Some useful links:
-    - [The Pet Store repository](https://github.com/swagger-api/swagger-petstore)
-    - [The source API definition for the Pet Store](https://github.com/swagger-api/swagger-petstore/blob/master/src/main/resources/openapi.yaml)
-  termsOfService: http://swagger.io/terms/
-  contact:
-    email: apiteam@swagger.io
-  license:
-    name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
-  version: 1.0.11
-externalDocs:
-  description: Find out more about Swagger
-  url: http://swagger.io
+  title: Fmarket API Documentation
+  description: Documentation for the Fmarket API
+  version: 1.0.0
 servers:
-  - url: https://petstore3.swagger.io/api/v3
+  - url: http://localhost:3000/api/
 tags:
   - name: site
-    description: api login, register, logout, verify
+    description: API for login, register, logout, and verify
+  - name: account
+    description: API for user account management
+
 paths:
-  /login:
-   post:
-    tags: 
-      - site
-    summary: login
-    description: login 
-    operationId: login
-    requestBody:
-      description: information user
-      content:
-        application/json:
-          schema: 
-            type: object
-            properties:
-              email:
-                type: string
-                example: vanh@gmail.com
-              password:
-                type: string
-                example: fmarketmd04
-      required: true
-    responses:
-      '200':
-        description: login successful
+  /register:
+    post:
+      tags:
+        - site
+      summary: Register a new user
+      operationId: register
+      requestBody:
         content:
           application/json:
-            schema: 
+            schema:
               type: object
               properties:
-                token: 
+                email:
                   type: string
-                  example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NTI2ZDQxODc2YTQ2NTQ2YTY5YzU0NTEiLCJpYXQiOjE2OTcwOTc3NjJ9.WxrEIvmPAqGIqpzCXIERCXZShb_tZpFDjXqSczkCktY
-          
+                  example: vanh@gmail.com
+                password:
+                  type: string
+                  example: fmarketmd04
+              required:
+                - email
+                - password
+      responses:
+        '200':
+          description: User registration successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 200
+                  message:
+                    type: string
+                    example: "Registration successful"
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 400
+                  message:
+                    type: string
+                    example: "Bad request"
+
+  /login:
+    post:
+      tags:
+        - site
+      summary: User login
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: vanh@gmail.com
+                password:
+                  type: string
+                  example: fmarketmd04
+              required:
+                - email
+                - password
+      responses:
+        '200':
+          description: User login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 200
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  message:
+                    type: string
+                    example: "Login successful"
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 404
+                  message:
+                    type: string
+                    example: "User not found"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 500
+                  message:
+                    type: string
+                    example: "Internal server error"
+
+  /logout:
+    get:
+      tags:
+        - site
+      summary: User logout
+      operationId: logout
+      responses:
+        '200':
+          description: User logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 200
+                  message:
+                    type: string
+                    example: "Logout successful"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 401
+                  message:
+                    type: string
+                    example: "Unauthorized"
+
+  /verify/{code}:
+    get:
+      tags:
+        - site
+      summary: Verify email
+      operationId: verifyEmail
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Verification code sent to the user's email
+      responses:
+        '200':
+          description: Email verification successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 200
+                  message:
+                    type: string
+                    example: "Email verification successful"
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 400
+                  message:
+                    type: string
+                    example: "Bad request"
+        '404':
+          description: Verification code not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 404
+                  message:
+                    type: string
+                    example: "Verification code not found"
+
+  /resend-code:
+    post:
+      tags:
+        - site
+      summary: Resend email verification code
+      operationId: resendConfirmationCode
+      responses:
+        '200':
+          description: Verification code resent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 200
+                  message:
+                    type: string
+                    example: "Verification code resent successfully"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 500
+                  message:
+                    type: string
+                    example: "Internal server error"
+
+  /account/detail-profile/{uid}:
+    get:
+      tags:
+        - account
+      summary: Get user's profile details
+      description: Retrieve user profile details.
+      operationId: detailProfile
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /account/edit-profile/{uid}:
+    put:
+      tags:
+        - account
+      summary: Edit user's profile
+      description: Update user profile information.
+      operationId: editProfile
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+      requestBody:
+        description: User profile data to update
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditProfileRequest'
+      responses:
+        '200':
+          description: User profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /account/upload-avatar/{uid}:
+    put:
+      tags:
+        - account
+      summary: Upload user's avatar
+      description: Upload a new user avatar.
+      operationId: uploadAvatar
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+      requestBody:
+        description: Avatar image file to upload
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadAvatarRequest'
+      responses:
+        '200':
+          description: Avatar uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /account/change-password/{uid}:
+    put:
+      tags:
+        - account
+      summary: Change user's password
+      description: Change user's password.
+      operationId: changePassword
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+      requestBody:
+        description: New password data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /Store/create/{uid}:
+      post:
+        tags:
+          - store
+        summary: Create a store
+        operationId: createStore
+        parameters:
+          - name: uid
+            in: path
+            required: true
+            schema:
+              type: string
+            description: User ID
+        requestBody:
+          description: Store data to create
+          content:
+            multipart/form-data:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  image:
+                    type: string
+                  address:
+                    type: string
+        responses:
+          '201':
+            description: Store created successfully
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/SuccessMessage'
+          '404':
+            description: Account not found
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '500':
+            description: Internal server error
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+
+  /Store/info/{storeId}:
+      get:
+        tags:
+          - store
+        summary: Get store details
+        operationId: detailStore
+        parameters:
+          - name: storeId
+            in: path
+            required: true
+            schema:
+              type: string
+            description: Store ID
+        responses:
+          '200':
+            description: Store details retrieved successfully
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/StoreDetails'
+          '404':
+            description: Store not found
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '500':
+            description: Internal server error
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+
+  /Store/delete/{storeId}:
+    delete:
+      tags:
+        - store
+      summary: Delete a store
+      operationId: deleteStore
+      parameters:
+        - name: storeId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Store ID
+      responses:
+        '200':
+          description: Store deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '404':
+          description: Store not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+  /products/:
+      get:
+        tags:
+          - products
+        summary: List products
+        operationId: listProducts
+        responses:
+          '200':
+            description: List of products
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Product'
+          '204':
+            description: No data
+          '500':
+            description: Internal server error
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+  
+  /products/create:
+      post:
+        tags:
+          - products
+        summary: Create a new product
+        operationId: createProduct
+        requestBody:
+          required: true
+          content:
+            multipart/form-data:
+              schema:
+                $ref: '#/components/schemas/NewProduct'
+        responses:
+          '200':
+            description: Product created successfully
+          '500':
+            description: Internal server error
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+
+  /products/update/{uid}:
+    put:
+      tags:
+        - products
+      summary: Update a product
+      operationId: updateProduct
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Product ID
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateProduct'
+      responses:
+        '200':
+          description: Product updated successfully
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /products/delete/{uid}:
+    delete:
+      tags:
+        - products
+      summary: Delete a product
+      operationId: deleteProduct
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Product ID
+      responses:
+        '200':
+          description: Product deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 200
+                  message:
+                    type: string
+                    example: "delete product successful"
+
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /category/get-list:
+    get:
+      tags:
+        - category
+      summary: List categories
+      operationId: listCategories
+      responses:
+        '200':
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+        '404':
+          description: No data
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /category/add:
+    post:
+      tags:
+        - category
+      summary: Add a new category
+      operationId: addCategory
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NewCategory'
+      responses:
+        '200':
+          description: Category added successfully
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /category/edit/{id}:
+    put:
+      tags:
+        - category
+      summary: Edit a category
+      operationId: editCategory
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Category ID
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateCategory'
+      responses:
+        '200':
+          description: Category updated successfully
+        '404':
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /category/delete/{id}:
+    delete:
+      tags:
+        - category
+      summary: Delete a category
+      operationId: deleteCategory
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Category ID
+      responses:
+        '200':
+          description: Category deleted successfully
+        '404':
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    UserProfile:
+      type: object
+      properties:
+        code:
+          type: number
+          example: 200
+        data:
+          $ref: '#/components/schemas/AccountData'
+        message:
+          type: string
+          example: "Get user success"
+
+    EditProfileRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          example: "new_username"
+        full_name:
+          type: string
+          example: "New Full Name"
+        phone:
+          type: string
+          example: "555-555-5555"
+        address:
+          type: string
+          example: "New Address"
+        birthday:
+          type: string
+          example: "2001-02-03"
+    
+    UploadAvatarRequest:
+      type: object
+      properties:
+        avatar:
+          type: string
+
+    ChangePasswordRequest:
+      type: object
+      properties:
+        oldPassword:
+          type: string
+        newPassword:
+          type: string
+
+    AccountData:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "12345"  # Replace with actual user ID
+        email:
+          type: string
+          example: "user@example.com"
+        avatar:
+          type: string
+          example: "avatar_url.jpg"
+        username:
+          type: string
+          example: "username"
+        full_name:
+          type: string
+          example: "Full Name"
+        phone:
+          type: string
+          example: "123-456-7890"
+        address:
+          type: string
+          example: "123 Main St, City"
+        birthday:
+          type: string
+          example: "2000-01-01"
+        token:
+          type: string
+          example: "token_value"
+        isVerify:
+          type: boolean
+          example: true
+        confirmationCode:
+          type: string
+          example: "confirmation_code"
+        confirmationExpiration:
+          type: string
+          example: "2023-01-01T12:00:00Z"
+        is_active:
+          type: boolean
+          example: true
+        role_id:
+          type: number
+          example: 1
+
+    SuccessMessage:
+      type: object
+      properties:
+        code:
+          type: number
+          example: 200
+        message:
+          type: string
+          example: "Success Message"
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: number
+          example: 404
+        message:
+          type: string
+          example: "Error Message"
+
+    StoreDetails:
+      type: object
+      properties:
+        code:
+          type: number
+          example: 200
+        data:
+          $ref: '#/components/schemas/StoreData'
+        message:
+          type: string
+          example: "Get store success"
+
+    StoreData:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "12345"  # Replace with actual store ID
+        name:
+          type: string
+          example: "Store Name"
+        image:
+          type: string
+          example: "store_image.jpg"
+        address:
+          type: string
+          example: "123 Store St, City"
+        user_id:
+          type: string
+          example: "adkhfa"
+        is_active:
+          type: boolean
+          example: true
+
+    Product:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "12345"
+        store_id:
+          type: string
+          example: "67890"
+        category_id:
+          type: string
+          example: "54321"
+        name:
+          type: string
+          example: "Product Name"
+        image:
+          type: string
+          example: "product_image.jpg"
+        price:
+          type: number
+          example: 19.99
+        quantity:
+          type: integer
+          example: 100
+        units_sold:
+          type: integer
+          example: 50
+        description:
+          type: string
+          example: "Product description"
+        is_active:
+          type: boolean
+          example: true
+        status:
+          type: integer
+          example: 1
+
+    NewProduct:
+      type: object
+      properties:
+        store_id:
+          type: string
+        category_id:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+        quantity:
+          type: integer
+        units_sold:
+          type: integer
+        description:
+          type: string
+        is_active:
+          type: boolean
+        status:
+          type: integer
+        image:
+          type: string
+
+    UpdateProduct:
+      type: object
+      properties:
+        store_id:
+          type: string
+        category_id:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+        quantity:
+          type: integer
+        units_sold:
+          type: integer
+        description:
+          type: string
+        is_active:
+          type: boolean
+        status:
+          type: integer
+        image:
+          type: string
+    
+    Category:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "12345"
+        name:
+          type: string
+          example: "Category Name"
+        image:
+          type: string
+
+    NewCategory:
+      type: object
+      properties:
+        name:
+          type: string
+        image:
+          type: string
+
+    UpdateCategory:
+      type: object
+      properties:
+        name:
+          type: string
+        image:
+          type: string      
