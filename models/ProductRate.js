@@ -6,8 +6,7 @@ const productRateSchema = new db.mongoose.Schema(
     user_id: { type: db.mongoose.Schema.Types.ObjectId, ref: "account" },
     content: { type: String },
     image: { type: String },
-    price: { type: Number },
-    rate: { type: Number },
+    rate: { type: Number, min: 1, max: 5 },
   },
   {
     timestamps: true,
