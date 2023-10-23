@@ -2,7 +2,7 @@ const express = require("express");
 const models = require("../models/Category");
 
 //product
-// [get] /category/get-list
+// [get] /api/category/get-list
 const listCategory = async (req, res, next) => {
   try {
     const category = await models.category.find();
@@ -17,7 +17,7 @@ const listCategory = async (req, res, next) => {
   }
 };
 
-// [post] /category/add
+// [post] /api/category/add
 const addCategory = async (req, res, next) => {
   try {
     let obj = new models.category();
@@ -32,7 +32,7 @@ const addCategory = async (req, res, next) => {
   }
 };
 
-// [put] /category/edit/:id
+// [put] /api/category/edit/:id
 const editCategory = async (req, res, next) => {
   try {
     let id = req.params.id;
@@ -55,7 +55,7 @@ const editCategory = async (req, res, next) => {
   }
 };
 
-// [delete] /category/delete/:id
+// [delete] /api/category/delete/:id
 const deleteCategory = async (req, res, next) => {
   try {
     let id = req.params.id;

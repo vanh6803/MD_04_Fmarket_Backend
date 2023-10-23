@@ -1,4 +1,6 @@
 var db = require("../config/ConnectDB");
+let mdOrder = require("../models/Orders");
+let mdProduct = require("../models/Products");
 
 const orderDetailSchema = new db.mongoose.Schema(
   {
