@@ -1,4 +1,5 @@
 var db = require("../config/ConnectDB");
+const { productRate } = require("./ProductRate");
 
 const productSchema = new db.mongoose.Schema(
   {
@@ -12,6 +13,8 @@ const productSchema = new db.mongoose.Schema(
     discription: { type: String },
     is_active: { type: Boolean },
     status: { type: Number },
+    manufacturer: { type: String },
+    attribute: { type: Object}
   },
   {
     timestamps: true,
