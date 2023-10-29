@@ -28,6 +28,42 @@ const createStore = async (req, res, next) => {
   }
 };
 
+const editStore = async (req, res, next) => {
+  try {
+    const uid = req.params.uid;
+    const storeId = req.params.storeId;
+    const user = await accountModel.account.findById(uid);
+    if (!user) {
+      return res.status(404).json({ code: 404, message: "Account not found" });
+    }
+
+    const store = await storeModel.store.findById(storeId);
+    if (!store) {
+      return res.status(404).json({ code: 404, message: "Store not found" });
+    }
+
+    let { name, image, address } = req.body;
+    if (req.file) {
+      image = req.file.path;
+    }
+
+    await storeModel.store.findByIdAndUpdate(
+      storeId,
+      {
+        name: name,
+        address: address,
+        image: image,
+      },
+      { new: true }
+    );
+    return res
+      .status(201)
+      .json({ code: 201, message: "update store successfully" });
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
 const detailStore = async (req, res, next) => {
   try {
     const storeId = req.params.storeId;
@@ -68,4 +104,5 @@ module.exports = {
   createStore,
   detailStore,
   deleteStore,
+  editStore,
 };
