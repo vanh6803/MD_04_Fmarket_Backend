@@ -18,7 +18,7 @@ const upload = multer({ storage });
 
 router.post("/create/:uid", upload.single("image"), controller.createStore);
 router.put(
-  "/create/:uid/:storeId",
+  "/update/:uid/:storeId",
   upload.single("image"),
   controller.editStore
 );
