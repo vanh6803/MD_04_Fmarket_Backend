@@ -353,4 +353,5 @@ module.exports = {
   verifyEmail,
   resendConfirmationCode,
   forgotPassword,
+  loginWithGoogle
 };
