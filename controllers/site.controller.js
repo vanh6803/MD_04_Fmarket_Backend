@@ -1,6 +1,7 @@
 const model = require("../models/Account");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { OAuth2Client } = require("google-auth-library");
 const {
   sendEmail,
   generateConfirmationCode,
@@ -55,6 +56,7 @@ const register = async (req, res, next) => {
     const newAccount = new model.account({
       email,
       password,
+      is_active: true,
     });
 
     const salt = await bcrypt.genSalt(10);
@@ -243,7 +245,64 @@ const resendConfirmationCode = async (req, res, next) => {
   }
 };
 
-const loginWithGoogle = async (req, res, next) => {};
+const loginWithGoogle = async (req, res, next) => {
+  // The token you received from the Android app
+  const idToken = req.body.idToken;
+
+  if (!idToken) {
+    return res
+      .status(400)
+      .json({ code: 400, message: "Google ID token is required" });
+  }
+  const client = new OAuth2Client(process.env.CLIENT_ID);
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: process.env.CLIENT_ID, // Your Google Client ID for the web application
+    });
+
+    const payload = ticket.getPayload();
+    const email = payload.email;
+    const name = payload.name;
+
+    const existingUser = await model.account.findOne({ email });
+    if (existingUser) {
+      const token = jwt.sign(
+        { userId: existingUser._id },
+        process.env.KEY_TOKEN
+      );
+      existingUser.token = token;
+      await existingUser.save();
+      return res
+        .status(200)
+        .json({ code: 200, token, message: "Login successful" });
+    } else {
+      const username = name;
+      const password = generateRandomPassword(12);
+
+      const newUser = new model.account({
+        email,
+        password,
+        username,
+        isVerify: true,
+        is_active: true,
+      });
+
+      // Save the new user to the database
+      await newUser.save();
+
+      // Perform the login logic for the new user and return a token
+      const token = jwt.sign({ userId: newUser._id }, process.env.KEY_TOKEN);
+      newUser.token = token;
+      await newUser.save();
+      return res
+        .status(200)
+        .json({ code: 200, token, message: "Login successful" });
+    }
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
 
 const forgotPassword = async (req, res, next) => {
   try {
@@ -257,7 +316,7 @@ const forgotPassword = async (req, res, next) => {
       return res.status(400).json({ code: 400, message: "Account not found" });
     }
     const newPassword = generateRandomPassword(12);
-    
+
     // Hash new password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
@@ -278,12 +337,10 @@ const forgotPassword = async (req, res, next) => {
         console.log("response: ", response);
         return res.status(200).json({
           code: 200,
-          message:
-            "New pasword in your email ",
+          message: "New pasword in your email ",
         });
       }
     );
-
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
@@ -295,5 +352,5 @@ module.exports = {
   logout,
   verifyEmail,
   resendConfirmationCode,
-  forgotPassword
+  forgotPassword,
 };
