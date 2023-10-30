@@ -17,6 +17,19 @@ function generateUsername(email) {
   }
 }
 
+function generateRandomPassword(length) {
+  const charset =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=";
+  let password = "";
+
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * charset.length);
+    password += charset[randomIndex];
+  }
+
+  return password;
+}
+
 const register = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -230,7 +243,51 @@ const resendConfirmationCode = async (req, res, next) => {
   }
 };
 
-const loginWithGoogle = async (req, res, next) => {}
+const loginWithGoogle = async (req, res, next) => {};
+
+const forgotPassword = async (req, res, next) => {
+  try {
+    const email = req.body.email;
+
+    if (!email) {
+      return res.status(400).json({ code: 400, message: "email requied" });
+    }
+    const user = await model.account.findOne({ email: email });
+    if (!user) {
+      return res.status(400).json({ code: 400, message: "Account not found" });
+    }
+    const newPassword = generateRandomPassword(12);
+    
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // save new password
+    user.password = hashedPassword;
+    await user.save();
+
+    sendEmail(
+      email,
+      "New password",
+      `New password for you: ${newPassword}`,
+      (error, response) => {
+        if (error) {
+          console.error("error - send email - register: ", error.message);
+          return res.status(400).json({ code: 400, message: error.message });
+        }
+        console.log("response: ", response);
+        return res.status(200).json({
+          code: 200,
+          message:
+            "New pasword in your email ",
+        });
+      }
+    );
+
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
 
 module.exports = {
   register,
@@ -238,4 +295,5 @@ module.exports = {
   logout,
   verifyEmail,
   resendConfirmationCode,
+  forgotPassword
 };
