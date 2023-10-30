@@ -7,6 +7,16 @@ const {
   generateExpirationTime,
 } = require("../utils/NodemailerService");
 
+function generateUsername(email) {
+  const atIndex = email.indexOf("@");
+  if (atIndex !== -1) {
+    return email.slice(0, atIndex);
+  } else {
+    // Xử lý trường hợp email không có ký tự '@'
+    return email;
+  }
+}
+
 const register = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -41,6 +51,9 @@ const register = async (req, res, next) => {
 
     newAccount.confirmationCode = confirmationCode;
     newAccount.confirmationExpiration = generateExpirationTime();
+
+    const username = generateUsername(email);
+    newAccount.username = username;
 
     await newAccount.save();
 
@@ -216,6 +229,8 @@ const resendConfirmationCode = async (req, res, next) => {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
+
+const loginWithGoogle = async (req, res, next) => {}
 
 module.exports = {
   register,
