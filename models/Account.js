@@ -20,6 +20,7 @@ const accountSchema = new db.mongoose.Schema(
       required: true,
       default: 0,
     },
+    info: [{ type: db.mongoose.Schema.Types.ObjectId, ref: "info" }]
   },
   {
     timestamps: true,

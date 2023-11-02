@@ -1,5 +1,4 @@
 var db = require("../config/ConnectDB");
-const { productRate } = require("./ProductRate");
 
 const productSchema = new db.mongoose.Schema(
   {
@@ -7,14 +6,21 @@ const productSchema = new db.mongoose.Schema(
     category_id: { type: db.mongoose.Schema.Types.ObjectId, ref: "category" },
     name: { type: String },
     image: [{ type: String }],
-    price: { type: Number },
-    quantity: { type: Number },
-    units_sold: { type: Number },
-    discription: { type: String },
+    description: { type: String },
+    status: { type: String },//mới, cũ
+    discounted: Boolean, //có giảm giá hay không
     is_active: { type: Boolean },
-    status: { type: Number },
+    camera: { type: String },
+    cpu: { type: String },
+    gpu: { type: String },
+    battery: { type: Number },
+    weight: { type: Number },
+    connection: { type: String },
+    specialFeature: { type: String },
     manufacturer: { type: String },
-    attribute: { type: Object}
+    other: { type: String },
+    option: [{ type: db.mongoose.Schema.Types.ObjectId, ref: "option" }],
+    product_review: [{ type: db.mongoose.Schema.Types.ObjectId, ref: "productRate" }]
   },
   {
     timestamps: true,
