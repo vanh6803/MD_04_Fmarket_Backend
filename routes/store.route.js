@@ -16,9 +16,9 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage });
 
-router.post("/create/:uid", upload.single("image"), controller.createStore);
+router.post("/create", upload.single("image"), controller.createStore);
 router.put(
-  "/update/:uid/:storeId",
+  "/update/:storeId",
   upload.single("image"),
   controller.editStore
 );

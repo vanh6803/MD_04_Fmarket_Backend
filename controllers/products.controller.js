@@ -1,183 +1,131 @@
-let md = require('../models/Products');
+const categoryModel = require("../models/Category");
+const productModel = require("../models/Products");
+const optionModel = require("../models/Option");
+const storeModel = require("../models/Store");
 
-const list = async (req, res, next) => {
-    try {
-        // Phân trang
-        let { page } = req.query;
-        if (page == undefined) {
-            page = 1;
-        }
-        let pageSize = 10; // số lượng phần tử trong page
-        let skipCount = (page - 1) * pageSize; // số lượng phần tử bỏ qua
-
-        let isCheck = null;
-        // Lọc theo category_id
-        let idCategorySearch = req.body.category_id;
-        if(typeof(idCategorySearch) != 'undefined') {
-            isCheck = {category_id: idCategorySearch}
-            console.log(isCheck);
-        }
-
-        // Lọc theo tên sản phẩm
-        let productName = req.body.name;
-        if(typeof(productName) != 'undefined') {
-            const isCheck = { name: productName }; // Search chuẩn tên mới nhận, chưa làm search
-            console.log(isCheck);
-        }
-
-        // get list data and ref category
-        let listProduct = await md.product.find(isCheck)
-            .skip(skipCount)
-            .limit(pageSize)
-            .sort({ _id: -1 })
-            .populate("category_id");
-
-        if (listProduct.length > 0) {
-            res.status(200).json({
-                status: 200,
-                message: 'Get data successfully!',
-                data: listProduct
-            });
-        } else {
-            res.status(404).json({
-                status: 404,
-                message: 'No data!'
-            });
-        }
-    } catch (error) {
-        res.status(500).json({
-            code: 500,
-            message: error.message
-        });
+const addProduct = async (req, res) => {
+  try {
+    const dataBody = req.body;
+    const category = await categoryModel.category.findById(
+      dataBody.category_id
+    );
+    if (!category) {
+      return res.status(404).json({ code: 404, message: "no found category!" });
     }
-}
-
-const create = async (req, res, next) => {
-    try {
-        let image = req.file.path;
-
-        let {
-            store_id,
-            category_id,
-            name,
-            price,
-            quantity,
-            units_sold,
-            discription,
-            is_active,
-            status
-        } = req.body;
-
-        let objProduct = new md.product({
-            store_id,
-            category_id,
-            name,
-            price,
-            quantity,
-            units_sold,
-            discription,
-            is_active,
-            status,
-            image
-        });
-
-        // save data
-        await objProduct.save();
-
-        res.status(200).json({
-            code: 200,
-            message: 'Added data successfully!',
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            code: 500,
-            message: error.message
-        });
+    const store = await storeModel.store.findById(dataBody.store_id);
+    if (!store) {
+      return res.status(404).json({ code: 404, message: "no found store!" });
     }
-}
-
-const update = async (req, res, next) => {
-    try {
-        try {
-            let uid = req.params.uid;
-            let objProduct = await md.product.findById(uid); // ko tìm thấy id thì error
-            let productUpdate = req.body;
-            console.log(objProduct);
-            console.log(productUpdate);
-            await md.product.findByIdAndUpdate({ _id: uid }, productUpdate, { new: true });
-            res.status(200).json({
-                code: 200,
-                message: "Update successful product!"
-            });
-        } catch (error) {
-            res.status(404).json({
-                code: 404,
-                message: "Not found product!"
-            });
-        }
-
-    } catch (error) {
-        res.status(500).json({
-            code: 500,
-            message: error.message
-        });
+    console.log("file: ", req.files);
+    console.log("image: ", req.body.image);
+    if (req.files) {
+      const images = req.files.map((file) => file.path);
+      dataBody.image = images;
+      console.log(images);
     }
-}
+    const product = new productModel.product(req.body);
+    await product.save();
+    console.log(product);
+    category.product.push(product._id);
+    store.product.push(product._id);
+    await category.save();
+    await store.save();
+    return res
+      .status(201)
+      .json({ code: 201, message: "created product successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
 
-const remove = async (req, res, next) => {
-    try {
-        let uid = req.params.uid;
-        let productRemove = await md.product.findByIdAndDelete({ _id: uid });
-        if (productRemove) {
-            res.status(200).json({
-                code: 200,
-                message: "Delete successful product!"
-            });
-        } else {
-            res.status(404).json({
-                code: 404,
-                message: "Not found product!"
-            });
-        }
-    } catch (error) {
-        res.status(500).json({
-            code: 500,
-            message: error.message
-        });
+const addOption = async (req, res) => {
+  try {
+    const dataBody = req.body;
+    const product = await productModel.product.findById(dataBody.product_id);
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
     }
-}
+    const option = new optionModel.option(req.body);
+    await option.save();
+    product.option.push(option._id);
+    await product.save();
+    console.log(option);
+    res.status(201).json({ code: 201, message: "created option successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
 
-const detail = async (req, res, next) => {
-    try {
-        try {
-            let uid = req.params.uid;
-            let productDetail = await md.product.findById(uid).populate("category_id"); // ko tìm thấy id thì error
-            res.status(200).json({
-                code: 200,
-                message: "Update successful product!",
-                data: [productDetail]
-            });
-        } catch (error) {
-            res.status(404).json({
-                code: 404,
-                message: "Not found product!",
-                data: []
-            });
-        }
-    } catch (error) {
-        res.status(500).json({
-            code: 500,
-            message: error.message
-        });
+const detailProduct = async (req, res, next) => {
+  try {
+    const { productId } = req.params;
+    console.log(productId);
+    const product = await productModel.product
+      .findById(productId)
+      .populate(["option", "store_id", "category_id", "product_review"]);
+
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
     }
-}
 
+    //   _id: product._id,
+    //   store_id: product.store_id,
+    //   category_id: product.category_id,
+    //   name: product.name,
+    //   image: product.image,
+    //   description: product.description,
+    //   status: product.status,
+    //   discounted: product.discounted,
+    //   is_active: product.is_active,
+    //   camera: product.camera,
+    //   cpu: product.cpu,
+    //   gpu: product.gpu,
+    //   battery: product.battery,
+    //   weight: product.weight,
+    //   connection: product.connection,
+    //   specialFeature: product.specialFeature,
+    //   manufacturer: product.manufacturer,
+    //   other: product.other,
+    //   option: option,
+    // };
+
+    // console.log(result);
+    return res
+      .status(200)
+      .json({ code: 200, result: product, message: "get product successfull" });
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
+const getProductsByCategory = async (req, res, next) => {
+  try {
+    const category = await categoryModel.category.find().populate("product");
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
+const getAllProducts = async (req, res, next) => {
+  try {
+    const product = await productModel.product.find();
+    return res
+      .status(200)
+      .json({ code: 200, result: product, message: "get product successfull" });
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
 
 module.exports = {
-    list,
-    create,
-    update,
-    remove,
-    detail
-}
+  addOption,
+  addProduct,
+  detailProduct,
+  getAllProducts,
+  getProductsByCategory,
+};
