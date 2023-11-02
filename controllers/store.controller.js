@@ -3,17 +3,11 @@ const accountModel = require("../models/Account");
 
 const createStore = async (req, res, next) => {
   try {
-    const uid = req.params.uid;
-    const user = await accountModel.account.findById(uid);
-    if (!user) {
-      return res.status(404).json({ code: 404, message: "Account not found" });
-    }
     let { name, image, address } = req.body;
     if (req.file) {
       image = req.file.path;
     }
     const newStore = new storeModel.store({
-      user_id: uid,
       name: name,
       address: address,
       image: image,
@@ -30,13 +24,7 @@ const createStore = async (req, res, next) => {
 
 const editStore = async (req, res, next) => {
   try {
-    const uid = req.params.uid;
     const storeId = req.params.storeId;
-    const user = await accountModel.account.findById(uid);
-    if (!user) {
-      return res.status(404).json({ code: 404, message: "Account not found" });
-    }
-
     const store = await storeModel.store.findById(storeId);
     if (!store) {
       return res.status(404).json({ code: 404, message: "Store not found" });

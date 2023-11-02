@@ -1,10 +1,21 @@
 const categoryModel = require("../models/Category");
 const productModel = require("../models/Products");
 const optionModel = require("../models/Option");
+const storeModel = require("../models/Store");
 
 const addProduct = async (req, res) => {
   try {
     const dataBody = req.body;
+    const category = await categoryModel.category.findById(
+      dataBody.category_id
+    );
+    if (!category) {
+      return res.status(404).json({ code: 404, message: "no found category!" });
+    }
+    const store = await storeModel.store.findById(dataBody.store_id);
+    if (!store) {
+      return res.status(404).json({ code: 404, message: "no found store!" });
+    }
     console.log("file: ", req.files);
     console.log("image: ", req.body.image);
     if (req.files) {
@@ -15,6 +26,10 @@ const addProduct = async (req, res) => {
     const product = new productModel.product(req.body);
     await product.save();
     console.log(product);
+    category.product.push(product._id);
+    store.product.push(product._id);
+    await category.save();
+    await store.save();
     return res
       .status(201)
       .json({ code: 201, message: "created product successfully" });
@@ -49,7 +64,7 @@ const detailProduct = async (req, res, next) => {
     console.log(productId);
     const product = await productModel.product
       .findById(productId)
-      .populate("option");
+      .populate(["option", "store_id", "category_id", "product_review"]);
 
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
@@ -86,12 +101,31 @@ const detailProduct = async (req, res, next) => {
   }
 };
 
-const productForCategory = async (req, res, next) => {
+const getProductsByCategory = async (req, res, next) => {
   try {
+    const category = await categoryModel.category.find().populate("product");
   } catch (error) {
     console.log(error.message);
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
 
-module.exports = { addOption, addProduct, detailProduct };
+const getAllProducts = async (req, res, next) => {
+  try {
+    const product = await productModel.product.find();
+    return res
+      .status(200)
+      .json({ code: 200, result: product, message: "get product successfull" });
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
+module.exports = {
+  addOption,
+  addProduct,
+  detailProduct,
+  getAllProducts,
+  getProductsByCategory,
+};
