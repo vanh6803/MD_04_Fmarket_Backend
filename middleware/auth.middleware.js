@@ -18,7 +18,7 @@ const checkToken = async (req, res, next) => {
     if (!user) {
       throw new Error("unknown user");
     }
-    req.user = user;
+    req.user = user;uid
     next();
   } catch (error) {
     console.log(error);

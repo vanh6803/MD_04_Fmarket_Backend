@@ -34,4 +34,6 @@ router.put(
   controller.uploadAvatar
 );
 
+// router.delete("/delete-account/:uid", middleware.checkToken, controller.deleteAccount)
+
 module.exports = router;

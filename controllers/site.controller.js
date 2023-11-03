@@ -64,20 +64,6 @@ const register = async (req, res, next) => {
           email,
           "Confirmation Code",
           `Your confirmation code: ${newConfirmationCode}`
-          // (error, response) => {
-          //   if (error) {
-          //     console.error("error - send email - register: ", error.message);
-          //     return res
-          //       .status(400)
-          //       .json({ code: 400, message: error.message });
-          //   }
-          //   console.log("response: ", response);
-          //   return res.status(200).json({
-          //     code: 200,
-          //     message:
-          //       "Email already exists, resend confirmation code successfully",
-          //   });
-          // }
         );
         return res.status(200).json({
           code: 200,
