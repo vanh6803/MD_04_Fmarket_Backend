@@ -17,12 +17,20 @@ const listCategory = async (req, res, next) => {
 // [post] /api/category/add
 const addCategory = async (req, res, next) => {
   try {
-    const data = req.body
+    const data = req.body;
     if (req.file) {
       data.image = req.file.path;
     }
+
+    const existingCategory = await models.category.find({ name: data.name });
+    if (existingCategory) {
+      return res
+        .status(409)
+        .json({ code: 409, message: "category already exists" });
+    }
+
     let obj = new models.category(data);
-    
+
     await obj.save();
     return res.status(200).json({ code: 200, message: "add successfully!" });
   } catch (error) {
@@ -38,11 +46,11 @@ const editCategory = async (req, res, next) => {
     if (!category) {
       return res.status(404).json({ code: 404, message: "Category not found" });
     }
-    const data = req.body
+    const data = req.body;
     if (req.file) {
       data.image = req.file.path;
     }
-    await models.category.findByIdAndUpdate({ _id: id }, data, {new: true});
+    await models.category.findByIdAndUpdate({ _id: id }, data, { new: true });
     return res.status(200).json({ code: 200, message: "update successfully!" });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
