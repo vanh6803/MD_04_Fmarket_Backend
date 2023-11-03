@@ -7,7 +7,7 @@ const productSchema = new db.mongoose.Schema(
     name: { type: String },
     image: [{ type: String }],
     description: { type: String },
-    status: { type: String },//mới, cũ
+    status: { type: String , required: true, enum: ["mới", "cũ"]},//mới, cũ
     discounted: Boolean, //có giảm giá hay không
     is_active: { type: Boolean },
     camera: { type: String },
