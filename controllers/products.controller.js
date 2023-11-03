@@ -92,9 +92,11 @@ const detailProduct = async (req, res, next) => {
     // };
 
     // console.log(result);
-    return res
-      .status(200)
-      .json({ code: 200, result: product, message: "get product successfull" });
+    return res.status(200).json({
+      code: 200,
+      result: product,
+      message: "get detail product successfull",
+    });
   } catch (error) {
     console.log(error.message);
     return res.status(500).json({ code: 500, message: error.message });
@@ -103,7 +105,14 @@ const detailProduct = async (req, res, next) => {
 
 const getProductsByCategory = async (req, res, next) => {
   try {
-    const category = await categoryModel.category.find().populate("product");
+    const category = await categoryModel.category
+      .find()
+      .populate("product")
+    return res.status(200).json({
+      code: 200,
+      result: category,
+      message: "get product by category successfull",
+    });
   } catch (error) {
     console.log(error.message);
     return res.status(500).json({ code: 500, message: error.message });
@@ -113,9 +122,11 @@ const getProductsByCategory = async (req, res, next) => {
 const getAllProducts = async (req, res, next) => {
   try {
     const product = await productModel.product.find();
-    return res
-      .status(200)
-      .json({ code: 200, result: product, message: "get product successfull" });
+    return res.status(200).json({
+      code: 200,
+      result: product,
+      message: "get all product successfull",
+    });
   } catch (error) {
     console.log(error.message);
     return res.status(500).json({ code: 500, message: error.message });
