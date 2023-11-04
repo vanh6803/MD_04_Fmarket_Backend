@@ -8,12 +8,15 @@ const productSchema = new db.mongoose.Schema(
     image: [{ type: String }],
     description: { type: String },
     status: { type: String , required: true, enum: ["mới", "cũ"]},//mới, cũ
-    discounted: Boolean, //có giảm giá hay không
+    discounted: { type: Boolean }, //có giảm giá hay không
     is_active: { type: Boolean },
+    screen: { type: String },
     camera: { type: String },
+    chipset: { type: String },
     cpu: { type: String },
     gpu: { type: String },
-    battery: { type: Number },
+    operatingSystem: { type: String },
+    battery: { type: String },
     weight: { type: Number },
     connection: { type: String },
     specialFeature: { type: String },
