@@ -27,12 +27,33 @@ const addProduct = async (req, res) => {
     await product.save();
     console.log(product);
     category.product.push(product._id);
-    store.product.push(product._id);
     await category.save();
-    await store.save();
     return res
       .status(201)
       .json({ code: 201, message: "created product successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
+const updateProduct = async (req, res, next) => {
+  try {
+    const { productId } = req.params;
+    const dataBody = req.body;
+
+    await productModel.product
+      .findByIdAndUpdate(productId, dataBody, { new: true })
+      .then(() => {
+        return res
+          .status(200)
+          .json({ code: 200, message: "Product updated successfully" });
+      })
+      .catch(() => {
+        return res
+          .status(404)
+          .json({ code: 404, message: "Product not found" });
+      });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ code: 500, message: error.message });
@@ -58,6 +79,25 @@ const addOption = async (req, res) => {
   }
 };
 
+const updateOption = async (req, res, next) => {
+  try {
+    const { optionId } = req.params;
+    const dataBody = req.body;
+    await optionModel.option
+      .findByIdAndUpdate(optionId, dataBody)
+      .then(() => {
+        return res
+          .status(200)
+          .json({ code: 200, message: "option updated successfully" });
+      })
+      .catch(() => {
+        return res.status(404).json({ code: 404, message: "option not found" });
+      });
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
 const detailProduct = async (req, res, next) => {
   try {
     const { productId } = req.params;
@@ -69,29 +109,6 @@ const detailProduct = async (req, res, next) => {
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
     }
-
-    //   _id: product._id,
-    //   store_id: product.store_id,
-    //   category_id: product.category_id,
-    //   name: product.name,
-    //   image: product.image,
-    //   description: product.description,
-    //   status: product.status,
-    //   discounted: product.discounted,
-    //   is_active: product.is_active,
-    //   camera: product.camera,
-    //   cpu: product.cpu,
-    //   gpu: product.gpu,
-    //   battery: product.battery,
-    //   weight: product.weight,
-    //   connection: product.connection,
-    //   specialFeature: product.specialFeature,
-    //   manufacturer: product.manufacturer,
-    //   other: product.other,
-    //   option: option,
-    // };
-
-    // console.log(result);
     return res.status(200).json({
       code: 200,
       result: product,
@@ -105,9 +122,7 @@ const detailProduct = async (req, res, next) => {
 
 const getProductsByCategory = async (req, res, next) => {
   try {
-    const category = await categoryModel.category
-      .find()
-      .populate("product")
+    const category = await categoryModel.category.find().populate("product");
     return res.status(200).json({
       code: 200,
       result: category,
@@ -121,7 +136,17 @@ const getProductsByCategory = async (req, res, next) => {
 
 const getAllProducts = async (req, res, next) => {
   try {
-    const product = await productModel.product.find();
+    // Get the page number and items per page from query parameters (default values if not provided)
+    const page = parseInt(req.query.page) || 1;
+    const itemsPerPage = parseInt(req.query.itemsPerPage) || 10; // You can adjust this value as needed
+
+    // Calculate the skip value based on page number and items per page
+    const skip = (page - 1) * itemsPerPage;
+
+    const product = await productModel.product
+      .find()
+      .skip(skip)
+      .limit(itemsPerPage);
     return res.status(200).json({
       code: 200,
       result: product,
@@ -139,4 +164,6 @@ module.exports = {
   detailProduct,
   getAllProducts,
   getProductsByCategory,
+  updateProduct,
+  updateOption,
 };

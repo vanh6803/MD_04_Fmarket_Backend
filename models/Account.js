@@ -15,11 +15,9 @@ const accountSchema = new db.mongoose.Schema(
     is_active: { type: Boolean },
     role_id: {
       type: String,
-      required: true,
-      enum: ["admin", "customer","seller"],
+      enum: ["admin", "customer", "staff"],
       default: "customer",
     },
-    info: [{ type: db.mongoose.Schema.Types.ObjectId, ref: "info" }]
   },
   {
     timestamps: true,
