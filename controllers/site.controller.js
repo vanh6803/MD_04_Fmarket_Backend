@@ -33,7 +33,7 @@ function generateRandomPassword(length) {
 
 const register = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role_id } = req.body;
 
     console.log(`email: ${email}, password: ${password}`);
 
@@ -82,6 +82,7 @@ const register = async (req, res, next) => {
       email,
       password,
       is_active: true,
+      role_id: role_id,
     });
 
     newAccount.password = await bcrypt.hash(password, salt);
@@ -256,7 +257,7 @@ const resendConfirmationCode = async (req, res, next) => {
 
 const loginWithGoogle = async (req, res, next) => {
   // The token you received from the Android app
-  const idToken = req.body.idToken;
+  const idToken = req.body.idToken; //token của google trả về
 
   if (!idToken) {
     return res
@@ -304,10 +305,45 @@ const loginWithGoogle = async (req, res, next) => {
       const token = jwt.sign({ userId: newUser._id }, process.env.KEY_TOKEN);
       newUser.token = token;
       await newUser.save();
-      return res
-        .status(200)
-        .json({ code: 200, token, message: "Login successful" });
+      return res.status(200).json({
+        code: 200,
+        token,
+        message: "Login successful",
+        isNewAccount: true,
+      });
     }
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
+// note: chỉ dành cho đăng nhập với google
+const createNewPassword = async (req, res, next) => {
+  try {
+    let { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ code: 400, message: "passsword requied" });
+    }
+
+    const uid = req.user._id;
+
+    const salt = await bcrypt.genSalt(10);
+    let passwordHash = await bcrypt.hash(password, salt);
+
+    await model.account
+      .findByIdAndUpdate(uid, { password: passwordHash })
+      .then(() => {
+        return res.status(200).json({
+          code: 201,
+          message: "create new password successfully",
+        });
+      })
+      .catch(() => {
+        return res
+          .status(400)
+          .json({ code: 400, message: "Account not found" });
+      });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
@@ -334,11 +370,7 @@ const forgotPassword = async (req, res, next) => {
     user.password = hashedPassword;
     await user.save();
 
-    sendEmail(
-      email,
-      "New password",
-      `New password for you: ${newPassword}`,
-    );
+    sendEmail(email, "New password", `New password for you: ${newPassword}`);
     return res.status(200).json({
       code: 200,
       message: "New pasword in your email ",
@@ -356,4 +388,5 @@ module.exports = {
   resendConfirmationCode,
   forgotPassword,
   loginWithGoogle,
+  createNewPassword
 };

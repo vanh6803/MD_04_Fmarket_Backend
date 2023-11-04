@@ -10,5 +10,10 @@ router.get("/logout", middlware.checkToken, controller.logout);
 router.get("/verify/:code", controller.verifyEmail);
 router.post("/resend-code", controller.resendConfirmationCode);
 router.post("/forgot-password", controller.forgotPassword);
+router.put(
+  "/create-new-password",
+  middlware.checkToken,
+  controller.createNewPassword
+);
 
 module.exports = router;

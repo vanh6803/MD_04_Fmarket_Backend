@@ -27,9 +27,7 @@ const addProduct = async (req, res) => {
     await product.save();
     console.log(product);
     category.product.push(product._id);
-    store.product.push(product._id);
     await category.save();
-    await store.save();
     return res
       .status(201)
       .json({ code: 201, message: "created product successfully" });
@@ -69,29 +67,6 @@ const detailProduct = async (req, res, next) => {
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
     }
-
-    //   _id: product._id,
-    //   store_id: product.store_id,
-    //   category_id: product.category_id,
-    //   name: product.name,
-    //   image: product.image,
-    //   description: product.description,
-    //   status: product.status,
-    //   discounted: product.discounted,
-    //   is_active: product.is_active,
-    //   camera: product.camera,
-    //   cpu: product.cpu,
-    //   gpu: product.gpu,
-    //   battery: product.battery,
-    //   weight: product.weight,
-    //   connection: product.connection,
-    //   specialFeature: product.specialFeature,
-    //   manufacturer: product.manufacturer,
-    //   other: product.other,
-    //   option: option,
-    // };
-
-    // console.log(result);
     return res.status(200).json({
       code: 200,
       result: product,
