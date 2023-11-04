@@ -317,7 +317,7 @@ const loginWithGoogle = async (req, res, next) => {
   }
 };
 
-// note: chỉ dành cho đăng nhập với google
+// todo: chỉ dành cho đăng nhập với google
 const createNewPassword = async (req, res, next) => {
   try {
     let { password } = req.body;

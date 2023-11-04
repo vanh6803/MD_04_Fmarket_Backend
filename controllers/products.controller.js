@@ -37,6 +37,29 @@ const addProduct = async (req, res) => {
   }
 };
 
+const updateProduct = async (req, res, next) => {
+  try {
+    const { productId } = req.params;
+    const dataBody = req.body;
+
+    await productModel.product
+      .findByIdAndUpdate(productId, dataBody, { new: true })
+      .then(() => {
+        return res
+          .status(200)
+          .json({ code: 200, message: "Product updated successfully" });
+      })
+      .catch(() => {
+        return res
+          .status(404)
+          .json({ code: 404, message: "Product not found" });
+      });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
 const addOption = async (req, res) => {
   try {
     const dataBody = req.body;
@@ -52,6 +75,25 @@ const addOption = async (req, res) => {
     res.status(201).json({ code: 201, message: "created option successfully" });
   } catch (error) {
     console.error(error);
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
+const updateOption = async (req, res, next) => {
+  try {
+    const { optionId } = req.params;
+    const dataBody = req.body;
+    await optionModel.option
+      .findByIdAndUpdate(optionId, dataBody)
+      .then(() => {
+        return res
+          .status(200)
+          .json({ code: 200, message: "option updated successfully" });
+      })
+      .catch(() => {
+        return res.status(404).json({ code: 404, message: "option not found" });
+      });
+  } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
@@ -80,9 +122,7 @@ const detailProduct = async (req, res, next) => {
 
 const getProductsByCategory = async (req, res, next) => {
   try {
-    const category = await categoryModel.category
-      .find()
-      .populate("product")
+    const category = await categoryModel.category.find().populate("product");
     return res.status(200).json({
       code: 200,
       result: category,
@@ -114,4 +154,6 @@ module.exports = {
   detailProduct,
   getAllProducts,
   getProductsByCategory,
+  updateProduct,
+  updateOption,
 };
