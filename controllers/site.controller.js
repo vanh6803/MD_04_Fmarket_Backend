@@ -33,7 +33,7 @@ function generateRandomPassword(length) {
 
 const register = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role_id } = req.body;
 
     console.log(`email: ${email}, password: ${password}`);
 
@@ -44,12 +44,37 @@ const register = async (req, res, next) => {
         .json({ code: 400, message: "Email and password are required" });
     }
 
+    const salt = await bcrypt.genSalt(10);
     // check email existing
     const existingUser = await model.account.findOne({ email });
     if (existingUser) {
+      console.log("Email already exists");
+      if (existingUser.isVerify == false) {
+        console.log("email don't verify");
+        let newPassword = await bcrypt.hash(password, salt);
+        let newConfirmationCode = generateConfirmationCode();
+        let newConfirmationExpiration = generateExpirationTime();
+        await model.account.findByIdAndUpdate(existingUser._id, {
+          password: newPassword,
+          confirmationCode: newConfirmationCode,
+          confirmationExpiration: newConfirmationExpiration,
+        });
+
+        sendEmail(
+          email,
+          "Confirmation Code",
+          `Your confirmation code: ${newConfirmationCode}`
+        );
+        return res.status(200).json({
+          code: 200,
+          message:
+            "Email already exists, resend confirmation code successfully",
+        });
+      }
+
       return res
-        .status(401)
-        .json({ code: 401, message: "Email already exists", isExit: true });
+        .status(409)
+        .json({ code: 409, message: "Email already exists", isExit: true });
     }
 
     // create new account and hash password
@@ -57,9 +82,9 @@ const register = async (req, res, next) => {
       email,
       password,
       is_active: true,
+      role_id: role_id,
     });
 
-    const salt = await bcrypt.genSalt(10);
     newAccount.password = await bcrypt.hash(password, salt);
 
     const confirmationCode = generateConfirmationCode();
@@ -75,20 +100,12 @@ const register = async (req, res, next) => {
     sendEmail(
       email,
       "Confirmation Code",
-      `Your confirmation code: ${confirmationCode}`,
-      (error, response) => {
-        if (error) {
-          console.error("error - send email - register: ", error.message);
-          return res.status(400).json({ code: 400, message: error.message });
-        }
-        console.log("response: ", response);
-        return res.status(200).json({
-          code: 200,
-          message:
-            "Gửi lại mã xác nhận thành công, vui lòng kiểm tra email để xác nhận",
-        });
-      }
+      `Your confirmation code: ${confirmationCode}`
     );
+    return res.status(200).json({
+      code: 200,
+      message: "Send confirm code successfully, please check your email",
+    });
   } catch (error) {
     console.error("error - register: ", error.message);
     return res.status(500).json({ code: 500, message: error.message });
@@ -227,19 +244,12 @@ const resendConfirmationCode = async (req, res, next) => {
     sendEmail(
       email,
       "Confirmation Code",
-      `Your confirmation code: ${confirmationCode}`,
-      (error, response) => {
-        if (error) {
-          console.error(error.message);
-          return res.status(400).json({ code: 400, message: error.message });
-        }
-        console.log("response: ", response);
-        return res.status(200).json({
-          code: 200,
-          message: "Confirmation code resend successfully",
-        });
-      }
+      `Your confirmation code: ${confirmationCode}`
     );
+    return res.status(200).json({
+      code: 200,
+      message: "Confirmation code resend successfully",
+    });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
@@ -247,7 +257,7 @@ const resendConfirmationCode = async (req, res, next) => {
 
 const loginWithGoogle = async (req, res, next) => {
   // The token you received from the Android app
-  const idToken = req.body.idToken;
+  const idToken = req.body.idToken; //token của google trả về
 
   if (!idToken) {
     return res
@@ -295,10 +305,45 @@ const loginWithGoogle = async (req, res, next) => {
       const token = jwt.sign({ userId: newUser._id }, process.env.KEY_TOKEN);
       newUser.token = token;
       await newUser.save();
-      return res
-        .status(200)
-        .json({ code: 200, token, message: "Login successful" });
+      return res.status(200).json({
+        code: 200,
+        token,
+        message: "Login successful",
+        isNewAccount: true,
+      });
     }
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
+// todo: chỉ dành cho đăng nhập với google
+const createNewPassword = async (req, res, next) => {
+  try {
+    let { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ code: 400, message: "passsword requied" });
+    }
+
+    const uid = req.user._id;
+
+    const salt = await bcrypt.genSalt(10);
+    let passwordHash = await bcrypt.hash(password, salt);
+
+    await model.account
+      .findByIdAndUpdate(uid, { password: passwordHash })
+      .then(() => {
+        return res.status(200).json({
+          code: 201,
+          message: "create new password successfully",
+        });
+      })
+      .catch(() => {
+        return res
+          .status(400)
+          .json({ code: 400, message: "Account not found" });
+      });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
@@ -325,22 +370,11 @@ const forgotPassword = async (req, res, next) => {
     user.password = hashedPassword;
     await user.save();
 
-    sendEmail(
-      email,
-      "New password",
-      `New password for you: ${newPassword}`,
-      (error, response) => {
-        if (error) {
-          console.error("error - send email - register: ", error.message);
-          return res.status(400).json({ code: 400, message: error.message });
-        }
-        console.log("response: ", response);
-        return res.status(200).json({
-          code: 200,
-          message: "New pasword in your email ",
-        });
-      }
-    );
+    sendEmail(email, "New password", `New password for you: ${newPassword}`);
+    return res.status(200).json({
+      code: 200,
+      message: "New pasword in your email ",
+    });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
@@ -353,5 +387,6 @@ module.exports = {
   verifyEmail,
   resendConfirmationCode,
   forgotPassword,
-  loginWithGoogle
+  loginWithGoogle,
+  createNewPassword
 };

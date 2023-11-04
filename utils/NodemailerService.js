@@ -9,13 +9,7 @@ const sendEmail = (to, subject, text, callback) => {
     text: text,
   };
 
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      callback(error);
-    } else {
-      callback(null, "Email sent: " + info.response);
-    }
-  });
+  transporter.sendMail(mailOptions);
 };
 // Confirmation code generator (5 chars)
 function generateConfirmationCode() {

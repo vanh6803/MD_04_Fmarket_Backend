@@ -14,15 +14,26 @@ const storage = new CloudinaryStorage({
   },
 });
 
-const upload = multer({ storage });
+const uploadAvatar = multer({ storage });
+const uploadBanner = multer({ storage });
 
-router.post("/create/:uid", upload.single("image"), controller.createStore);
+router.post(
+  "/create/:uid",
+  uploadAvatar.single("avatar"),
+  uploadBanner.single("banner"),
+  controller.createStore
+);
 router.put(
-  "/update/:uid/:storeId",
-  upload.single("image"),
+  "/update/:storeId",
+  uploadAvatar.single("avatar"),
   controller.editStore
 );
+router.put(
+  "/upload-banner/:storeId",
+  uploadBanner.single("banner"),
+  controller.uploadBanner
+);
 router.get("/info/:storeId", middlware.checkToken, controller.detailStore);
-router.delete("/delete/:storeId", middlware.checkToken, controller.deleteStore);
+// router.delete("/delete/:storeId", middlware.checkToken, controller.deleteStore);
 
 module.exports = router;

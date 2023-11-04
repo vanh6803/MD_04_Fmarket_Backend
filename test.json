@@ -1,0 +1,46 @@
+{
+    "products": {
+        "name": "Laptop ABC",
+        "description": "Mô tả sản phẩm laptop ABC",
+        "image": [
+            "url_hinh_anh_xyz.jpg"
+        ],
+        "discounted": true,
+        "option": [
+            {
+                "_id": "6543280698478e98c08a4ef5",
+                "name_color": "white",
+                "color_code": "#ffffff",
+                "ram": 6,
+                "rom": 128,
+                "price": 123,
+                "product_id": "654326a198478e98c08a4ef2",
+                "createdAt": "2023-11-02T04:39:34.811Z",
+                "updatedAt": "2023-11-02T04:39:34.811Z",
+                "__v": 0
+            },
+            {
+                "_id": "6543281a98478e98c08a4ef8",
+                "name_color": "black",
+                "color_code": "#ffffff",
+                "ram": 6,
+                "rom": 128,
+                "price": 111,
+                "product_id": "654326a198478e98c08a4ef2",
+                "createdAt": "2023-11-02T04:39:54.483Z",
+                "updatedAt": "2023-11-02T04:39:54.483Z",
+                "__v": 0
+            },
+            {
+                "_id": "65434d0e8ca38ff6aac0ddaa",
+                "ram": 6,
+                "rom": 128,
+                "price": 111,
+                "product_id": "654326a198478e98c08a4ef2",
+                "createdAt": "2023-11-02T07:17:34.556Z",
+                "updatedAt": "2023-11-02T07:17:34.556Z",
+                "__v": 0
+            }
+        ]
+    }
+}

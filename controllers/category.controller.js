@@ -6,9 +6,6 @@ const models = require("../models/Category");
 const listCategory = async (req, res, next) => {
   try {
     const category = await models.category.find();
-    if (!category) {
-      return res.status(404).json({ code: 404, message: "no data  " });
-    }
     return res
       .status(200)
       .json({ code: 200, data: category, message: "get data successfully!" });
@@ -20,11 +17,20 @@ const listCategory = async (req, res, next) => {
 // [post] /api/category/add
 const addCategory = async (req, res, next) => {
   try {
-    let obj = new models.category();
-    obj.name = req.body.name;
+    const data = req.body;
     if (req.file) {
-      obj.image = req.file.path;
+      data.image = req.file.path;
     }
+
+    const existingCategory = await models.category.find({ name: data.name });
+    if (existingCategory) {
+      return res
+        .status(409)
+        .json({ code: 409, message: "category already exists" });
+    }
+
+    let obj = new models.category(data);
+
     await obj.save();
     return res.status(200).json({ code: 200, message: "add successfully!" });
   } catch (error) {
@@ -40,15 +46,11 @@ const editCategory = async (req, res, next) => {
     if (!category) {
       return res.status(404).json({ code: 404, message: "Category not found" });
     }
-    let obj = new models.category();
-    obj.name = req.body.name;
-    obj._id = id;
-
+    const data = req.body;
     if (req.file) {
-      obj.image = req.file.path;
+      data.image = req.file.path;
     }
-
-    await models.category.findByIdAndUpdate({ _id: id }, obj);
+    await models.category.findByIdAndUpdate({ _id: id }, data, { new: true });
     return res.status(200).json({ code: 200, message: "update successfully!" });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });

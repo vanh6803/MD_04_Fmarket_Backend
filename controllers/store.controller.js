@@ -8,15 +8,14 @@ const createStore = async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ code: 404, message: "Account not found" });
     }
-    let { name, image, address } = req.body;
+    let { name, avatar, address } = req.body;
     if (req.file) {
       image = req.file.path;
     }
     const newStore = new storeModel.store({
-      user_id: uid,
       name: name,
       address: address,
-      image: image,
+      avatar: avatar,
       is_active: true,
     });
     await newStore.save();
@@ -30,21 +29,15 @@ const createStore = async (req, res, next) => {
 
 const editStore = async (req, res, next) => {
   try {
-    const uid = req.params.uid;
     const storeId = req.params.storeId;
-    const user = await accountModel.account.findById(uid);
-    if (!user) {
-      return res.status(404).json({ code: 404, message: "Account not found" });
-    }
-
     const store = await storeModel.store.findById(storeId);
     if (!store) {
       return res.status(404).json({ code: 404, message: "Store not found" });
     }
 
-    let { name, image, address } = req.body;
+    let { name, avatar, address } = req.body;
     if (req.file) {
-      image = req.file.path;
+      avatar = req.file.path;
     }
 
     await storeModel.store.findByIdAndUpdate(
@@ -52,7 +45,7 @@ const editStore = async (req, res, next) => {
       {
         name: name,
         address: address,
-        image: image,
+        avatar: avatar,
       },
       { new: true }
     );
@@ -78,6 +71,14 @@ const detailStore = async (req, res, next) => {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
+
+const uploadBanner = async (req, res, next) => {
+  try {
+    
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+}
 
 const deleteStore = async (req, res, next) => {
   try {
@@ -105,4 +106,5 @@ module.exports = {
   detailStore,
   deleteStore,
   editStore,
+  uploadBanner
 };
