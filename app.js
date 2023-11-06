@@ -10,13 +10,7 @@ var siteRouter = require("./routes/site.route");
 var userRouter = require("./routes/account.route");
 var storeRoute = require("./routes/store.route");
 var reviewRoute = require("./routes/productRate.route");
-var productsRouter = require('./routes/products.route');
-var categoryRouter = require('./routes/category.route');
-var siteRouter = require("./routes/site.route");
-var userRouter = require("./routes/account.route");
-var storeRoute = require("./routes/store.route")
 var orderRoute = require("./routes/order.route")
-var storeRoute = require("./routes/store.route");
 var cartRoute = require('./routes/cart.route');
 var infoRoute = require('./routes/info.route');
 
