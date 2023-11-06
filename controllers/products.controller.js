@@ -143,9 +143,10 @@ const getProductsByCategory = async (req, res, next) => {
           _id: product._id,
           name: product.name,
           image: product.image[0],
-          price: `${minPrice} - ${maxPrice}`,
+          price: minPrice,
           discounted: product.discounted,
           averageRate: averageRate,
+          review: product.product_review.length,
         });
       }
 
@@ -236,8 +237,8 @@ const getAllProducts = async (req, res, next) => {
         discounted,
         image: image[0],
         minPrice,
-        maxPrice,
         averageRate,
+        review: product.product_review.length,
       };
     });
     const finalResult = await Promise.all(result);

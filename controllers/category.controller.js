@@ -18,6 +18,7 @@ const listCategory = async (req, res, next) => {
 const addCategory = async (req, res, next) => {
   try {
     const data = req.body;
+    console.log(data);
     if (req.file) {
       data.image = req.file.path;
     }
