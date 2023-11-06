@@ -220,9 +220,19 @@ const getAllProducts = async (req, res, next) => {
       .find()
       .skip(skip)
       .limit(itemsPerPage);
+
+    let result = product.map(async (product) => {
+      return {
+        _id: product._id,
+        name: product.name,
+        discounted: product.discounted,
+        image: product.image[0],
+      };
+    });
+    const finalResult = await Promise.all(result);
     return res.status(200).json({
       code: 200,
-      result: product,
+      result: finalResult,
       message: "get all product successfull",
     });
   } catch (error) {
