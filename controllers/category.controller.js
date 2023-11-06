@@ -18,11 +18,12 @@ const listCategory = async (req, res, next) => {
 const addCategory = async (req, res, next) => {
   try {
     const data = req.body;
+    console.log(data);
     if (req.file) {
       data.image = req.file.path;
     }
 
-    const existingCategory = await models.category.find({ name: data.name });
+    const existingCategory = await models.category.findOne({ name: data.name });
     if (existingCategory) {
       return res
         .status(409)
