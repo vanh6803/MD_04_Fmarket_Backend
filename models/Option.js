@@ -10,7 +10,7 @@ const optionSchema = new db.mongoose.Schema(
     price: { type: Number },
     discount_value: { type: Number },
     quantity: { type: Number },
-    soldQuantity: { type: Number },
+    soldQuantity: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
