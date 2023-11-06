@@ -10,9 +10,10 @@ var categoryRouter = require("./routes/category.route");
 var reviewRoute = require("./routes/productRate.route");
 var userRouter = require("./routes/account.route");
 var orderRoute = require("./routes/order.route")
-var storeRoute = require("./routes/store.route");
 var cartRoute = require('./routes/cart.route');
 var infoRoute = require('./routes/info.route');
+var bannerRoute = require('./routes/banner.route');
+var storeRoute = require('./routes/store.route')
 
 var app = express();
 
@@ -35,6 +36,7 @@ app.use("/api/review", reviewRoute);
 app.use("/api/order", orderRoute);
 app.use('/api/cart',cartRoute);
 app.use('/api/info',infoRoute);
+app.use('/api/banner', bannerRoute)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
