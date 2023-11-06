@@ -13,6 +13,7 @@ var orderRoute = require("./routes/order.route")
 var cartRoute = require('./routes/cart.route');
 var infoRoute = require('./routes/info.route');
 var bannerRoute = require('./routes/banner.route');
+var storeRoute = require('./routes/store.route')
 
 var app = express();
 

@@ -22,7 +22,7 @@ const addCategory = async (req, res, next) => {
       data.image = req.file.path;
     }
 
-    const existingCategory = await models.category.find({ name: data.name });
+    const existingCategory = await models.category.findOne({ name: data.name });
     if (existingCategory) {
       return res
         .status(409)
