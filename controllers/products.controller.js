@@ -2,6 +2,7 @@ const categoryModel = require("../models/Category");
 const productModel = require("../models/Products");
 const optionModel = require("../models/Option");
 const storeModel = require("../models/Store");
+const productRateModel = require("../models/ProductRate");
 
 const addProduct = async (req, res) => {
   try {
@@ -122,15 +123,87 @@ const detailProduct = async (req, res, next) => {
 
 const getProductsByCategory = async (req, res, next) => {
   try {
-    const category = await categoryModel.category.find().populate("product");
+    const itemsPerPage = parseInt(req.query.itemsPerPage) || 10;
+    const categories = await categoryModel.category.find();
+
+    // format data returned
+    const result = categories.map(async (category) => {
+      const limitedProducts = await productModel.product
+        .find({
+          category_id: category._id,
+        })
+        .limit(itemsPerPage);
+
+      const formattedProducts = [];
+
+      for (const product of limitedProducts) {
+        const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
+        const averageRate = await getAverageRate(product._id);
+        formattedProducts.push({
+          _id: product._id,
+          name: product.name,
+          image: product.image[0],
+          price: `${minPrice} - ${maxPrice}`,
+          discounted: product.discounted,
+          averageRate: averageRate,
+        });
+      }
+
+      return {
+        _id: category._id,
+        nameCategory: category.name,
+        product: formattedProducts,
+      };
+    });
+
+    // Đợi cho tất cả các danh mục được xử lý và trả về
+    const finalResult = await Promise.all(result);
     return res.status(200).json({
       code: 200,
-      result: category,
+      result: finalResult,
       message: "get product by category successfull",
     });
   } catch (error) {
     console.log(error.message);
     return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
+const getAverageRate = async (product_id) => {
+  try {
+    const rates = await productRateModel.productRate.find(
+      { product_id: product_id },
+      "rate"
+    );
+
+    if (rates.length === 0) {
+      return 0; // Trả về 0 nếu không có đánh giá nào
+    }
+
+    const totalRate = rates.reduce((sum, rate) => sum + rate.rate, 0);
+    const averageRate = totalRate / rates.length;
+    return averageRate;
+  } catch (error) {
+    console.error(error.message);
+    throw error;
+  }
+};
+
+const getMinMaxPrices = async (product_id) => {
+  try {
+    const options = await optionModel.option.find(
+      { product_id: product_id },
+      "price"
+    );
+    const prices = options.map((option) => option.price);
+
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+
+    return { minPrice, maxPrice };
+  } catch (error) {
+    console.error(error.message);
+    throw error;
   }
 };
 
