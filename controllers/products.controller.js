@@ -216,17 +216,28 @@ const getAllProducts = async (req, res, next) => {
     // Calculate the skip value based on page number and items per page
     const skip = (page - 1) * itemsPerPage;
 
-    const product = await productModel.product
+    const products = await productModel.product
       .find()
       .skip(skip)
       .limit(itemsPerPage);
 
-    let result = product.map(async (product) => {
+    const result = products.map(async (product) => {
+      const { _id, name, discounted, image } = product;
+
+      // Lấy giá lớn nhất và giá nhỏ nhất của sản phẩm
+      const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
+
+      // Lấy sao trung bình của sản phẩm
+      const averageRate = await getAverageRate(product._id);
+
       return {
-        _id: product._id,
-        name: product.name,
-        discounted: product.discounted,
-        image: product.image[0],
+        _id,
+        name,
+        discounted,
+        image: image[0],
+        minPrice,
+        maxPrice,
+        averageRate,
       };
     });
     const finalResult = await Promise.all(result);
