@@ -7,7 +7,7 @@ const storeSchema = new db.mongoose.Schema(
     avatar: { type: String },
     banner: { type: String },
     address: { type: String },
-    is_active: { type: Boolean },
+    is_active: { type: Boolean, default: true },
   },
   {
     timestamps: true,

@@ -2,6 +2,7 @@ const categoryModel = require("../models/Category");
 const productModel = require("../models/Products");
 const optionModel = require("../models/Option");
 const storeModel = require("../models/Store");
+const productRateModel = require("../models/ProductRate");
 
 const addProduct = async (req, res) => {
   try {
@@ -37,6 +38,29 @@ const addProduct = async (req, res) => {
   }
 };
 
+const updateProduct = async (req, res, next) => {
+  try {
+    const { productId } = req.params;
+    const dataBody = req.body;
+
+    await productModel.product
+      .findByIdAndUpdate(productId, dataBody, { new: true })
+      .then(() => {
+        return res
+          .status(200)
+          .json({ code: 200, message: "Product updated successfully" });
+      })
+      .catch(() => {
+        return res
+          .status(404)
+          .json({ code: 404, message: "Product not found" });
+      });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
 const addOption = async (req, res) => {
   try {
     const dataBody = req.body;
@@ -52,6 +76,25 @@ const addOption = async (req, res) => {
     res.status(201).json({ code: 201, message: "created option successfully" });
   } catch (error) {
     console.error(error);
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
+const updateOption = async (req, res, next) => {
+  try {
+    const { optionId } = req.params;
+    const dataBody = req.body;
+    await optionModel.option
+      .findByIdAndUpdate(optionId, dataBody)
+      .then(() => {
+        return res
+          .status(200)
+          .json({ code: 200, message: "option updated successfully" });
+      })
+      .catch(() => {
+        return res.status(404).json({ code: 404, message: "option not found" });
+      });
+  } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
@@ -80,12 +123,44 @@ const detailProduct = async (req, res, next) => {
 
 const getProductsByCategory = async (req, res, next) => {
   try {
-    const category = await categoryModel.category
-      .find()
-      .populate("product")
+    const itemsPerPage = parseInt(req.query.itemsPerPage) || 10;
+    const categories = await categoryModel.category.find();
+
+    // format data returned
+    const result = categories.map(async (category) => {
+      const limitedProducts = await productModel.product
+        .find({
+          category_id: category._id,
+        })
+        .limit(itemsPerPage);
+
+      const formattedProducts = [];
+
+      for (const product of limitedProducts) {
+        const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
+        const averageRate = await getAverageRate(product._id);
+        formattedProducts.push({
+          _id: product._id,
+          name: product.name,
+          image: product.image[0],
+          price: `${minPrice} - ${maxPrice}`,
+          discounted: product.discounted,
+          averageRate: averageRate,
+        });
+      }
+
+      return {
+        _id: category._id,
+        nameCategory: category.name,
+        product: formattedProducts,
+      };
+    });
+
+    // Đợi cho tất cả các danh mục được xử lý và trả về
+    const finalResult = await Promise.all(result);
     return res.status(200).json({
       code: 200,
-      result: category,
+      result: finalResult,
       message: "get product by category successfull",
     });
   } catch (error) {
@@ -94,9 +169,57 @@ const getProductsByCategory = async (req, res, next) => {
   }
 };
 
+const getAverageRate = async (product_id) => {
+  try {
+    const rates = await productRateModel.productRate.find(
+      { product_id: product_id },
+      "rate"
+    );
+
+    if (rates.length === 0) {
+      return 0; // Trả về 0 nếu không có đánh giá nào
+    }
+
+    const totalRate = rates.reduce((sum, rate) => sum + rate.rate, 0);
+    const averageRate = totalRate / rates.length;
+    return averageRate;
+  } catch (error) {
+    console.error(error.message);
+    throw error;
+  }
+};
+
+const getMinMaxPrices = async (product_id) => {
+  try {
+    const options = await optionModel.option.find(
+      { product_id: product_id },
+      "price"
+    );
+    const prices = options.map((option) => option.price);
+
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+
+    return { minPrice, maxPrice };
+  } catch (error) {
+    console.error(error.message);
+    throw error;
+  }
+};
+
 const getAllProducts = async (req, res, next) => {
   try {
-    const product = await productModel.product.find();
+    // Get the page number and items per page from query parameters (default values if not provided)
+    const page = parseInt(req.query.page) || 1;
+    const itemsPerPage = parseInt(req.query.itemsPerPage) || 10; // You can adjust this value as needed
+
+    // Calculate the skip value based on page number and items per page
+    const skip = (page - 1) * itemsPerPage;
+
+    const product = await productModel.product
+      .find()
+      .skip(skip)
+      .limit(itemsPerPage);
     return res.status(200).json({
       code: 200,
       result: product,
@@ -114,4 +237,6 @@ module.exports = {
   detailProduct,
   getAllProducts,
   getProductsByCategory,
+  updateProduct,
+  updateOption,
 };
