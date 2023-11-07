@@ -253,6 +253,52 @@ const getAllProducts = async (req, res, next) => {
   }
 };
 
+const getProductsByStore = async (req, res, next) => {
+  try {
+    const store_id = req.params.storeId;
+    // Get the page number and items per page from query parameters (default values if not provided)
+    const page = parseInt(req.query.page) || 1;
+    const itemsPerPage = parseInt(req.query.itemsPerPage) || 10; // You can adjust this value as needed
+
+    // Calculate the skip value based on page number and items per page
+    const skip = (page - 1) * itemsPerPage;
+
+    const products = await productModel.product
+      .find({ store_id: store_id })
+      .skip(skip)
+      .limit(itemsPerPage);
+
+    const result = products.map(async (product) => {
+      const { _id, name, discounted, image } = product;
+
+      // Lấy giá lớn nhất và giá nhỏ nhất của sản phẩm
+      const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
+
+      // Lấy sao trung bình của sản phẩm
+      const averageRate = await getAverageRate(product._id);
+
+      return {
+        _id,
+        name,
+        discounted,
+        image: image[0],
+        minPrice,
+        averageRate,
+        review: product.product_review.length,
+      };
+    });
+    const finalResult = await Promise.all(result);
+    return res.status(200).json({
+      code: 200,
+      result: finalResult,
+      message: "get all product successfull",
+    });
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
 module.exports = {
   addOption,
   addProduct,
@@ -261,4 +307,5 @@ module.exports = {
   getProductsByCategory,
   updateProduct,
   updateOption,
+  getProductsByStore,
 };

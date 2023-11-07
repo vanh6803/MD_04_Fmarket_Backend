@@ -1,8 +1,19 @@
-var express = require('express');
+var express = require("express");
 var router = express.Router();
-var orderController = require('../controllers/order.controller');
+var controller = require("../controllers/order.controller");
+var middleware = require("../middleware/auth.middleware");
 
-// router.get('/', orderController.list);
-// router.post('/create', orderController.create);
+router.post("/create-order", middleware.checkToken, controller.createOrder);
+router.put(
+  "/update-order-status/:orderId",
+  middleware.checkToken,
+  controller.updateOrderStatus
+);
+router.post("/", middleware.checkToken, controller.getOrdersByUserId);
+router.post(
+  "/detail-order/:orderId",
+  middleware.checkToken,
+  controller.detailOrders
+);
 
 module.exports = router;
