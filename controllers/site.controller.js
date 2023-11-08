@@ -151,8 +151,8 @@ const login = async (req, res, next) => {
 
     // return token
     return res
-      .status(201)
-      .json({ code: 201, token, message: "login successful" });
+      .status(200)
+      .json({ code: 200, token, message: "login successful" });
   } catch (error) {
     console.error("error - login: ", error.message);
     return res.status(500).json({ code: 500, message: error.message });
@@ -388,5 +388,5 @@ module.exports = {
   resendConfirmationCode,
   forgotPassword,
   loginWithGoogle,
-  createNewPassword
+  createNewPassword,
 };

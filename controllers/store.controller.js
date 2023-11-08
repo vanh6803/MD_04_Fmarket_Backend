@@ -17,6 +17,7 @@ const createStore = async (req, res, next) => {
       banner = req.files["banner"][0].path;
     }
     const newStore = new storeModel.store({
+      account_id: uid,
       name: name,
       address: address,
       avatar: avatar,
@@ -88,9 +89,7 @@ const uploadBanner = async (req, res, next) => {
           .json({ code: 200, message: "update banner successfully" });
       })
       .catch(() => {
-        return res
-          .status(404)
-          .json({ code: 404, message: "store not found" });
+        return res.status(404).json({ code: 404, message: "store not found" });
       });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
@@ -112,9 +111,7 @@ const uploadAvatar = async (req, res, next) => {
           .json({ code: 200, message: "update avatar successfully" });
       })
       .catch(() => {
-        return res
-          .status(404)
-          .json({ code: 404, message: "store not found" });
+        return res.status(404).json({ code: 404, message: "store not found" });
       });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
