@@ -3,20 +3,21 @@ var express = require("express");
 var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
+var cors = require("cors");
 
 var siteRouter = require("./routes/site.route");
 var productsRouter = require("./routes/products.route");
 var categoryRouter = require("./routes/category.route");
 var reviewRoute = require("./routes/productRate.route");
 var userRouter = require("./routes/account.route");
-var orderRoute = require("./routes/order.route")
-var cartRoute = require('./routes/cart.route');
-var infoRoute = require('./routes/info.route');
-var bannerRoute = require('./routes/banner.route');
-var storeRoute = require('./routes/store.route')
+var orderRoute = require("./routes/order.route");
+var cartRoute = require("./routes/cart.route");
+var infoRoute = require("./routes/info.route");
+var bannerRoute = require("./routes/banner.route");
+var storeRoute = require("./routes/store.route");
 
 var app = express();
-
+app.use(cors());
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
@@ -34,9 +35,9 @@ app.use("/api/user", userRouter);
 app.use("/api/store", storeRoute);
 app.use("/api/review", reviewRoute);
 app.use("/api/order", orderRoute);
-app.use('/api/cart',cartRoute);
-app.use('/api/info',infoRoute);
-app.use('/api/banner', bannerRoute)
+app.use("/api/cart", cartRoute);
+app.use("/api/info", infoRoute);
+app.use("/api/banner", bannerRoute);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
