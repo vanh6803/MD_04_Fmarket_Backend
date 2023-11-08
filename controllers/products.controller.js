@@ -299,6 +299,49 @@ const getProductsByStore = async (req, res, next) => {
   }
 };
 
+const getSimilarProducts = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const product = await productModel.product.findById(productId);
+
+    if (!product) {
+      return res.status(404).json({ code: 404, message: "Product not found" });
+    }
+
+    // Lấy danh sách các sản phẩm cùng danh mục (category) với sản phẩm hiện tại, giới hạn chỉ 5 sản phẩm
+    const similarProducts = await productModel.product
+      .find({ category_id: product.category_id, _id: { $ne: productId } })
+      .limit(5);
+
+    const result = similarProducts.map(async (similarProduct) => {
+      const { _id, name, discounted, image } = similarProduct;
+      const { minPrice, maxPrice } = await getMinMaxPrices(similarProduct._id);
+      const averageRate = await getAverageRate(similarProduct._id);
+
+      return {
+        _id,
+        name,
+        discounted,
+        image: image[0],
+        minPrice,
+        averageRate,
+        review: similarProduct.product_review.length,
+      };
+    });
+
+    const similarProductsList = await Promise.all(result);
+
+    return res.status(200).json({
+      code: 200,
+      result: similarProductsList,
+      message: "get similar products successfully",
+    });
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
 module.exports = {
   addOption,
   addProduct,
@@ -308,4 +351,5 @@ module.exports = {
   updateProduct,
   updateOption,
   getProductsByStore,
+  getSimilarProducts,
 };
