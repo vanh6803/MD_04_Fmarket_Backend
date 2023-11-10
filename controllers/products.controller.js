@@ -143,7 +143,7 @@ const getProductsByCategory = async (req, res, next) => {
           _id: product._id,
           name: product.name,
           image: product.image[0],
-          price: minPrice,
+          minPrice: minPrice,
           discounted: product.discounted,
           averageRate: averageRate,
           review: product.product_review.length,
@@ -212,7 +212,7 @@ const getAllProducts = async (req, res, next) => {
   try {
     // Get the page number and items per page from query parameters (default values if not provided)
     const page = parseInt(req.query.page) || 1;
-    const itemsPerPage = parseInt(req.query.itemsPerPage) || 10; // You can adjust this value as needed
+    const itemsPerPage = parseInt(req.query.itemsPerPage) || 1000000000; // You can adjust this value as needed
 
     // Calculate the skip value based on page number and items per page
     const skip = (page - 1) * itemsPerPage;
@@ -239,6 +239,7 @@ const getAllProducts = async (req, res, next) => {
         minPrice,
         averageRate,
         review: product.product_review.length,
+        active: product.is_active,
       };
     });
     const finalResult = await Promise.all(result);
