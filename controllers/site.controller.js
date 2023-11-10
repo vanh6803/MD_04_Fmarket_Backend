@@ -113,6 +113,19 @@ const register = async (req, res, next) => {
 };
 const login = async (req, res, next) => {
   try {
+    const userAgent = req.headers["user-agent"];
+
+    // Kiểm tra platform
+    const isMobile = userAgent.includes("Mobile");
+    let platform;
+    if (isMobile) {
+      console.log("Client là mobile");
+      platform = "Mobile";
+    } else {
+      console.log("Client là web");
+      platform = "Web";
+    }
+
     const { email, password } = req.body;
 
     //validate email password
@@ -150,9 +163,12 @@ const login = async (req, res, next) => {
     await user.save();
 
     // return token
-    return res
-      .status(200)
-      .json({ code: 200, token, message: "login successful" });
+    return res.status(200).json({
+      code: 200,
+      token,
+      message: "login successful",
+      role: user.role_id,
+    });
   } catch (error) {
     console.error("error - login: ", error.message);
     return res.status(500).json({ code: 500, message: error.message });
