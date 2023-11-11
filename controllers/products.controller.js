@@ -123,7 +123,7 @@ const detailProduct = async (req, res, next) => {
 
 const getProductsByCategory = async (req, res, next) => {
   try {
-    const itemsPerPage = parseInt(req.query.itemsPerPage) || 10;
+    const itemsPerPage = parseInt(req.query.itemsPerPage) || 1000000;
     const categories = await categoryModel.category.find();
 
     // format data returned
