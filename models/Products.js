@@ -5,7 +5,6 @@ const productSchema = new db.mongoose.Schema(
     store_id: { type: db.mongoose.Schema.Types.ObjectId, ref: "store" },
     category_id: { type: db.mongoose.Schema.Types.ObjectId, ref: "category" },
     name: { type: String },
-    image: [{ type: String }],
     description: { type: String },
     status: { type: String , required: true, enum: ["mới", "cũ"]},//mới, cũ
     discounted: { type: Boolean }, //có giảm giá hay không

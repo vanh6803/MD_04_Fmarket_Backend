@@ -17,13 +17,6 @@ const addProduct = async (req, res) => {
     if (!store) {
       return res.status(404).json({ code: 404, message: "no found store!" });
     }
-    console.log("file: ", req.files);
-    console.log("image: ", req.body.image);
-    if (req.files) {
-      const images = req.files.map((file) => file.path);
-      dataBody.image = images;
-      console.log(images);
-    }
     const product = new productModel.product(req.body);
     await product.save();
     console.log(product);
@@ -68,14 +61,18 @@ const addOption = async (req, res) => {
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
     }
-    const option = new optionModel.option(req.body);
+    console.log("file: ", req.file);
+    if (req.file) {
+      dataBody.image = req.file.path;
+    }
+    const option = new optionModel.option(dataBody);
     await option.save();
     product.option.push(option._id);
     await product.save();
     console.log(option);
     res.status(201).json({ code: 201, message: "created option successfully" });
   } catch (error) {
-    console.error(error);
+    console.error(error.message);
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
@@ -84,6 +81,10 @@ const updateOption = async (req, res, next) => {
   try {
     const { optionId } = req.params;
     const dataBody = req.body;
+    console.log("file: ", req.file);
+    if (req.file) {
+      dataBody.image = req.file.path;
+    }
     await optionModel.option
       .findByIdAndUpdate(optionId, dataBody)
       .then(() => {
@@ -110,9 +111,14 @@ const detailProduct = async (req, res, next) => {
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
     }
+    const optionImages = product.option.map((option) => option.image);
+    let result = {
+      ...product._doc,
+      image: optionImages,
+    };
     return res.status(200).json({
       code: 200,
-      result: product,
+      result: result,
       message: "get detail product successfull",
     });
   } catch (error) {
@@ -123,7 +129,7 @@ const detailProduct = async (req, res, next) => {
 
 const getProductsByCategory = async (req, res, next) => {
   try {
-    const itemsPerPage = parseInt(req.query.itemsPerPage) || 10;
+    const itemsPerPage = parseInt(req.query.itemsPerPage) || 1000000;
     const categories = await categoryModel.category.find();
 
     // format data returned
@@ -132,6 +138,7 @@ const getProductsByCategory = async (req, res, next) => {
         .find({
           category_id: category._id,
         })
+        .populate("option")
         .limit(itemsPerPage);
 
       const formattedProducts = [];
@@ -139,10 +146,11 @@ const getProductsByCategory = async (req, res, next) => {
       for (const product of limitedProducts) {
         const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
         const averageRate = await getAverageRate(product._id);
+        const image = await getImageHotOption(product._id);
         formattedProducts.push({
           _id: product._id,
           name: product.name,
-          image: product.image[0],
+          image: image,
           minPrice: minPrice,
           discounted: product.discounted,
           averageRate: averageRate,
@@ -163,6 +171,143 @@ const getProductsByCategory = async (req, res, next) => {
       code: 200,
       result: finalResult,
       message: "get product by category successfull",
+    });
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
+const getAllProducts = async (req, res, next) => {
+  try {
+    // Get the page number and items per page from query parameters (default values if not provided)
+    const page = parseInt(req.query.page) || 1;
+    const itemsPerPage = parseInt(req.query.itemsPerPage) || 1000000000; // You can adjust this value as needed
+
+    // Calculate the skip value based on page number and items per page
+    const skip = (page - 1) * itemsPerPage;
+
+    const products = await productModel.product
+      .find()
+      .skip(skip)
+      .limit(itemsPerPage);
+
+    const result = products.map(async (product) => {
+      const { _id, name, discounted } = product;
+
+      // Lấy giá lớn nhất và giá nhỏ nhất của sản phẩm
+      const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
+
+      // Lấy sao trung bình của sản phẩm
+      const averageRate = await getAverageRate(product._id);
+      const image = await getImageHotOption(product._id);
+
+      return {
+        _id,
+        name,
+        discounted,
+        image: image,
+        minPrice,
+        averageRate,
+        review: product.product_review.length,
+        active: product.is_active,
+      };
+    });
+    const finalResult = await Promise.all(result);
+    return res.status(200).json({
+      code: 200,
+      result: finalResult,
+      message: "get all product successfull",
+    });
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
+const getProductsByStore = async (req, res, next) => {
+  try {
+    const store_id = req.params.storeId;
+    // Get the page number and items per page from query parameters (default values if not provided)
+    const page = parseInt(req.query.page) || 1;
+    const itemsPerPage = parseInt(req.query.itemsPerPage) || 10; // You can adjust this value as needed
+
+    // Calculate the skip value based on page number and items per page
+    const skip = (page - 1) * itemsPerPage;
+
+    const products = await productModel.product
+      .find({ store_id: store_id })
+      .skip(skip)
+      .limit(itemsPerPage);
+
+    const result = products.map(async (product) => {
+      const { _id, name, discounted } = product;
+
+      // Lấy giá lớn nhất và giá nhỏ nhất của sản phẩm
+      const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
+
+      // Lấy sao trung bình của sản phẩm
+      const averageRate = await getAverageRate(product._id);
+      const image = await getImageHotOption(product._id);
+
+      return {
+        _id,
+        name,
+        discounted,
+        image: image,
+        minPrice,
+        averageRate,
+        review: product.product_review.length,
+      };
+    });
+    const finalResult = await Promise.all(result);
+    return res.status(200).json({
+      code: 200,
+      result: finalResult,
+      message: "get all product successfull",
+    });
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
+const getSimilarProducts = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const product = await productModel.product.findById(productId);
+
+    if (!product) {
+      return res.status(404).json({ code: 404, message: "Product not found" });
+    }
+
+    // Lấy danh sách các sản phẩm cùng danh mục (category) với sản phẩm hiện tại, giới hạn chỉ 5 sản phẩm
+    const similarProducts = await productModel.product
+      .find({ category_id: product.category_id, _id: { $ne: productId } })
+      .limit(5);
+
+    const result = similarProducts.map(async (similarProduct) => {
+      const { _id, name, discounted } = similarProduct;
+      const { minPrice, maxPrice } = await getMinMaxPrices(similarProduct._id);
+      const averageRate = await getAverageRate(similarProduct._id);
+      const image = await getImageHotOption(product._id);
+      return {
+        _id,
+        name,
+        discounted,
+        image: image,
+        minPrice,
+        averageRate,
+        review: similarProduct.product_review.length,
+      };
+    });
+
+    const similarProductsList = await Promise.all(result);
+
+    return res.status(200).json({
+      code: 200,
+      result: similarProductsList,
+      message: "get similar products successfully",
     });
   } catch (error) {
     console.log(error.message);
@@ -208,138 +353,20 @@ const getMinMaxPrices = async (product_id) => {
   }
 };
 
-const getAllProducts = async (req, res, next) => {
+const getImageHotOption = async (product_id) => {
   try {
-    // Get the page number and items per page from query parameters (default values if not provided)
-    const page = parseInt(req.query.page) || 1;
-    const itemsPerPage = parseInt(req.query.itemsPerPage) || 1000000000; // You can adjust this value as needed
-
-    // Calculate the skip value based on page number and items per page
-    const skip = (page - 1) * itemsPerPage;
-
-    const products = await productModel.product
-      .find()
-      .skip(skip)
-      .limit(itemsPerPage);
-
-    const result = products.map(async (product) => {
-      const { _id, name, discounted, image } = product;
-
-      // Lấy giá lớn nhất và giá nhỏ nhất của sản phẩm
-      const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
-
-      // Lấy sao trung bình của sản phẩm
-      const averageRate = await getAverageRate(product._id);
-
-      return {
-        _id,
-        name,
-        discounted,
-        image: image[0],
-        minPrice,
-        averageRate,
-        review: product.product_review.length,
-        active: product.is_active,
-      };
-    });
-    const finalResult = await Promise.all(result);
-    return res.status(200).json({
-      code: 200,
-      result: finalResult,
-      message: "get all product successfull",
-    });
-  } catch (error) {
-    console.log(error.message);
-    return res.status(500).json({ code: 500, message: error.message });
-  }
-};
-
-const getProductsByStore = async (req, res, next) => {
-  try {
-    const store_id = req.params.storeId;
-    // Get the page number and items per page from query parameters (default values if not provided)
-    const page = parseInt(req.query.page) || 1;
-    const itemsPerPage = parseInt(req.query.itemsPerPage) || 10; // You can adjust this value as needed
-
-    // Calculate the skip value based on page number and items per page
-    const skip = (page - 1) * itemsPerPage;
-
-    const products = await productModel.product
-      .find({ store_id: store_id })
-      .skip(skip)
-      .limit(itemsPerPage);
-
-    const result = products.map(async (product) => {
-      const { _id, name, discounted, image } = product;
-
-      // Lấy giá lớn nhất và giá nhỏ nhất của sản phẩm
-      const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
-
-      // Lấy sao trung bình của sản phẩm
-      const averageRate = await getAverageRate(product._id);
-
-      return {
-        _id,
-        name,
-        discounted,
-        image: image[0],
-        minPrice,
-        averageRate,
-        review: product.product_review.length,
-      };
-    });
-    const finalResult = await Promise.all(result);
-    return res.status(200).json({
-      code: 200,
-      result: finalResult,
-      message: "get all product successfull",
-    });
-  } catch (error) {
-    console.log(error.message);
-    return res.status(500).json({ code: 500, message: error.message });
-  }
-};
-
-const getSimilarProducts = async (req, res) => {
-  try {
-    const { productId } = req.params;
-    const product = await productModel.product.findById(productId);
-
-    if (!product) {
-      return res.status(404).json({ code: 404, message: "Product not found" });
+    const options = await optionModel.option.find(
+      { product_id: product_id, hot_option: true },
+      "image"
+    );
+    if (options.length > 0) {
+      return options[0].image;
+    } else {
+      return "don't not value";
     }
-
-    // Lấy danh sách các sản phẩm cùng danh mục (category) với sản phẩm hiện tại, giới hạn chỉ 5 sản phẩm
-    const similarProducts = await productModel.product
-      .find({ category_id: product.category_id, _id: { $ne: productId } })
-      .limit(5);
-
-    const result = similarProducts.map(async (similarProduct) => {
-      const { _id, name, discounted, image } = similarProduct;
-      const { minPrice, maxPrice } = await getMinMaxPrices(similarProduct._id);
-      const averageRate = await getAverageRate(similarProduct._id);
-
-      return {
-        _id,
-        name,
-        discounted,
-        image: image[0],
-        minPrice,
-        averageRate,
-        review: similarProduct.product_review.length,
-      };
-    });
-
-    const similarProductsList = await Promise.all(result);
-
-    return res.status(200).json({
-      code: 200,
-      result: similarProductsList,
-      message: "get similar products successfully",
-    });
   } catch (error) {
-    console.log(error.message);
-    return res.status(500).json({ code: 500, message: error.message });
+    console.error(error.message);
+    throw error;
   }
 };
 
