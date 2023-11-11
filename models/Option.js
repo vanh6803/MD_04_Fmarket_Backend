@@ -12,7 +12,7 @@ const optionSchema = new db.mongoose.Schema(
     discount_value: { type: Number },
     quantity: { type: Number },
     soldQuantity: { type: Number, default: 0 },
-    hot_option: { type: String },
+    hot_option: { type: Boolean },
   },
   { timestamps: true }
 );
