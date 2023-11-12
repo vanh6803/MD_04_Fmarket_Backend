@@ -6,11 +6,15 @@ const createStore = async (req, res, next) => {
     const uid = req.params.uid;
     const user = await accountModel.account.findById(uid);
     if (!user) {
-      return res.status(404).json({ code: 404, message: "tài khoản không tồn tại" });
+      return res
+        .status(404)
+        .json({ code: 404, message: "tài khoản không tồn tại" });
     }
-    const exitingStore = await storeModel.store.findOne({account_id: uid})
+    const exitingStore = await storeModel.store.findOne({ account_id: uid });
     if (exitingStore) {
-      return res.status(409).json({ code: 409, message: "cửa hàng này đã tồn tại" });
+      return res
+        .status(409)
+        .json({ code: 409, message: "cửa hàng này đã tồn tại" });
     }
     let { name, address } = req.body;
     let avatar;
@@ -43,7 +47,9 @@ const editStore = async (req, res, next) => {
     const storeId = req.params.storeId;
     const store = await storeModel.store.findById(storeId);
     if (!store) {
-      return res.status(404).json({ code: 404, message: "không tìm thấy cửa hàng" });
+      return res
+        .status(404)
+        .json({ code: 404, message: "không tìm thấy cửa hàng" });
     }
 
     let { name, address } = req.body;
@@ -69,7 +75,9 @@ const detailStore = async (req, res, next) => {
     const storeId = req.params.storeId;
     const store = await storeModel.store.findById(storeId).populate("user_id");
     if (!store) {
-      return res.status(404).json({ code: 404, message: "không tìm thấy cửa hàng" });
+      return res
+        .status(404)
+        .json({ code: 404, message: "không tìm thấy cửa hàng" });
     }
     return res
       .status(200)
@@ -94,7 +102,9 @@ const uploadBanner = async (req, res, next) => {
           .json({ code: 200, message: "update banner successfully" });
       })
       .catch(() => {
-        return res.status(404).json({ code: 404, message: "không tìm thấy cửa hàng" });
+        return res
+          .status(404)
+          .json({ code: 404, message: "không tìm thấy cửa hàng" });
       });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
@@ -116,7 +126,9 @@ const uploadAvatar = async (req, res, next) => {
           .json({ code: 200, message: "update avatar successfully" });
       })
       .catch(() => {
-        return res.status(404).json({ code: 404, message: "không tìm thấy cửa hàng" });
+        return res
+          .status(404)
+          .json({ code: 404, message: "không tìm thấy cửa hàng" });
       });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
@@ -128,7 +140,9 @@ const deleteStore = async (req, res, next) => {
     const storeId = req.params.storeId;
     const store = await storeModel.store.findById(storeId);
     if (!store) {
-      return res.status(404).json({ code: 404, message: "không tìm thấy cửa hàng" });
+      return res
+        .status(404)
+        .json({ code: 404, message: "không tìm thấy cửa hàng" });
     }
     await storeModel.store
       .findByIdAndDelete(storeId)
@@ -144,6 +158,27 @@ const deleteStore = async (req, res, next) => {
   }
 };
 
+const checkExitingStore = async (req, res, next) => {
+  try {
+    const uid = req.user._id;
+    const exitingStore = await storeModel.store.findOne({ account_id: uid });
+    if (exitingStore) {
+      return res.status(409).json({
+        code: 409,
+        message: "cửa hàng này đã tồn tại",
+        isExiting: true,
+      });
+    }
+    return res.status(200).json({
+      code: 200,
+      message: "cửa hàng này chưa tồn tại",
+      isExiting: false,
+    });
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
 module.exports = {
   createStore,
   detailStore,
@@ -151,4 +186,5 @@ module.exports = {
   editStore,
   uploadBanner,
   uploadAvatar,
+  checkExitingStore,
 };
