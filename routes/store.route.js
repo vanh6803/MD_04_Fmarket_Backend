@@ -36,6 +36,7 @@ router.put(
   controller.uploadBanner
 );
 router.get("/info/:storeId", middlware.checkToken, controller.detailStore);
+router.get("/check-exiting", middlware.checkToken, controller.checkExitingStore);
 // router.delete("/delete/:storeId", middlware.checkToken, controller.deleteStore);
 
 module.exports = router;
