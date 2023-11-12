@@ -22,7 +22,7 @@ const addToCart = async (req, res, next) => {
   try {
     let obj = new models.cart();
     
-    obj.product_id = req.body.product_id;
+    obj.option_id = req.body.option_id;
     obj.user_id = req.body.user_id;
     obj.quantity = req.body.quantity;
 
@@ -42,7 +42,7 @@ const editCart = async (req, res, next) => {
       return res.status(404).json({ code: 404, message: "Cart not found" });
     }
     let obj = new models.cart();
-    obj.product_id = req.body.product_id
+    obj.option_id = req.body.option_id
     obj.user_id = req.body.user_id;
     obj._id = id;
     obj.quantity = req.body.quantity;
