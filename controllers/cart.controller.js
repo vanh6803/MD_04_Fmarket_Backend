@@ -1,77 +1,115 @@
-const express = require("express");
 const models = require("../models/Cart");
 
-//product
-// [get] /api/cart/get-list
-const listCart = async (req, res, next) => {
+const listCartForUser = async (req, res, next) => {
   try {
-    const cart = await models.cart.find();
-    if (!cart) {
-      return res.status(404).json({ code: 404, message: "no data  " });
-    }
-    return res
-      .status(200)
-      .json({ code: 200, data: cart, message: "get data successfully!" });
+    const uid = req.user._id;
+    const cart = await models.cart
+      .find({ user_id: uid })
+      .populate(["option_id", "user_id"]);
+    return res.status(200).json({
+      code: 200,
+      data: cart ? cart : [],
+      message: "get data successfully!",
+    });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
 
-// [post] /api/cart/add
-const addToCart = async (req, res, next) => {
+const createCartItem = async (req, res, next) => {
   try {
-    let obj = new models.cart();
-    
-    obj.product_id = req.body.product_id;
-    obj.user_id = req.body.user_id;
-    obj.quantity = req.body.quantity;
+    const user_id = req.user._id;
+    const { option_id, quantity } = req.body;
 
-    await obj.save();
-    return res.status(200).json({ code: 200, message: "add successfully!" });
+    // Check if a cart item with the given option_id already exists for the user
+    const existingCartItem = await models.cart.findOne({ user_id, option_id });
+
+    if (existingCartItem) {
+      // If the cart item exists, update the quantity
+      const updatedCartItem = await models.cart.findOneAndUpdate(
+        { user_id, option_id },
+        { $set: { quantity: existingCartItem.quantity + quantity } },
+        { new: true }
+      );
+
+      return res
+        .status(200)
+        .json({
+          code: 200,
+          data: updatedCartItem,
+          message: "Cart item updated successfully!",
+        });
+    } else {
+      // If the cart item doesn't exist, create a new one
+      const newCartItem = await models.cart.create({
+        user_id,
+        option_id,
+        quantity,
+      });
+
+      return res
+        .status(201)
+        .json({
+          code: 201,
+          data: newCartItem,
+          message: "Cart item created successfully!",
+        });
+    }
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
 
-// [put] /api/cart/edit/:id
-const editCart = async (req, res, next) => {
+const updateCartItemQuantity = async (req, res, next) => {
   try {
-    let id = req.params.id;
-    const cart = await models.cart.findById(id);
-    if (!cart) {
-      return res.status(404).json({ code: 404, message: "Cart not found" });
-    }
-    let obj = new models.cart();
-    obj.product_id = req.body.product_id
-    obj.user_id = req.body.user_id;
-    obj._id = id;
-    obj.quantity = req.body.quantity;
+    const cartItemId = req.params.id;
+    const { quantity } = req.body;
 
-    await models.cart.findByIdAndUpdate({ _id: id }, obj);
-    return res.status(200).json({ code: 200, message: "update successfully!" });
+    const updatedCartItem = await models.cart.findByIdAndUpdate(
+      cartItemId,
+      { $set: { quantity } },
+      { new: true }
+    );
+
+    if (!updatedCartItem) {
+      return res
+        .status(404)
+        .json({ code: 404, message: "Cart item not found" });
+    }
+
+    return res.status(200).json({
+      code: 200,
+      message: "Cart item updated successfully!",
+    });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
 
-// [delete] /api/cart/delete/:id
-const deleteCart = async (req, res, next) => {
+const deleteCartItem = async (req, res, next) => {
   try {
-    let id = req.params.id;
-    const cart = await models.cart.findById(id);
-    if (!cart) {
-      return res.status(404).json({ code: 404, message: "Cart not found" });
+    const cartItemId = req.params.id;
+
+    const deletedCartItem = await models.cart.findByIdAndDelete(cartItemId);
+
+    if (!deletedCartItem) {
+      return res
+        .status(404)
+        .json({ code: 404, message: "Cart item not found" });
     }
-    await models.cart.findByIdAndDelete(id);
-    return res.status(200).json({ code: 200, message: "delete successfully!" });
+
+    return res.status(200).json({
+      code: 200,
+      message: "Cart item deleted successfully!",
+    });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
 
 module.exports = {
-  listCart,
-  addToCart,
-  editCart,
-  deleteCart,
+  listCartForUser,
+  createCartItem,
+  updateCartItemQuantity,
+  deleteCartItem,
 };

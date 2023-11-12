@@ -56,7 +56,7 @@ const resetPassword = async (req, res, next) => {
   try {
     const uid = req.params.uid;
     const user = await model.account.findById(uid);
-    let {oldPassword, newPassword} = req.body
+    let { oldPassword, newPassword } = req.body;
     if (!user) {
       return res.status(404).json({ code: 404, message: "User not found" });
     }
@@ -69,7 +69,7 @@ const resetPassword = async (req, res, next) => {
     }
 
     const salt = await bcrypt.genSalt(10);
-    newPassword = await bcrypt.hash(newPassword, salt) 
+    newPassword = await bcrypt.hash(newPassword, salt);
     await model.account.findByIdAndUpdate(
       uid,
       { password: newPassword },
@@ -83,10 +83,21 @@ const resetPassword = async (req, res, next) => {
   }
 };
 
+const allUser = async (req, res, next) => {
+  try {
+    const users = model.account.find();
+    return res
+      .status(200)
+      .json({ code: 200, message: "get all success", result: users });
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
 
 module.exports = {
   detailProfile,
   resetPassword,
   editProfile,
   uploadAvatar,
+  allUser,
 };
