@@ -19,13 +19,15 @@ router.get("/all-product-by-store/:storeId", controller.getProductsByStore);
 router.get("/all-product-by-category", controller.getProductsByCategory);
 router.get("/detail-product/:productId", controller.detailProduct);
 router.get("/similar-product/:productId", controller.getSimilarProducts);
+//product
 router.post("/create-product", middleware.checkToken, controller.addProduct);
-router.post("/create-option", upload.single("image"), controller.addOption);
-router.post(
+router.put(
   "/update-product/:productId",
   middleware.checkToken,
   controller.updateProduct
 );
+//option
+router.post("/create-option", upload.single("image"), controller.addOption);
 router.put(
   "/update-option/:optionId",
   upload.single("image"),
