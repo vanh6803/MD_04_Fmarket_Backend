@@ -6,7 +6,11 @@ const createStore = async (req, res, next) => {
     const uid = req.params.uid;
     const user = await accountModel.account.findById(uid);
     if (!user) {
-      return res.status(404).json({ code: 404, message: "Account not found" });
+      return res.status(404).json({ code: 404, message: "tài khoản không tồn tại" });
+    }
+    const exitingStore = await storeModel.store.findOne({account_id: uid})
+    if (exitingStore) {
+      return res.status(409).json({ code: 409, message: "cửa hàng này đã tồn tại" });
     }
     let { name, address } = req.body;
     let avatar;
@@ -16,6 +20,7 @@ const createStore = async (req, res, next) => {
       avatar = req.files["avatar"][0].path;
       banner = req.files["banner"][0].path;
     }
+
     const newStore = new storeModel.store({
       account_id: uid,
       name: name,
@@ -27,7 +32,7 @@ const createStore = async (req, res, next) => {
     await newStore.save();
     return res
       .status(201)
-      .json({ code: 201, message: "created store successfully" });
+      .json({ code: 201, message: "tạo cửa hàng thành công" });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
@@ -38,7 +43,7 @@ const editStore = async (req, res, next) => {
     const storeId = req.params.storeId;
     const store = await storeModel.store.findById(storeId);
     if (!store) {
-      return res.status(404).json({ code: 404, message: "Store not found" });
+      return res.status(404).json({ code: 404, message: "không tìm thấy cửa hàng" });
     }
 
     let { name, address } = req.body;
@@ -53,7 +58,7 @@ const editStore = async (req, res, next) => {
     );
     return res
       .status(201)
-      .json({ code: 201, message: "update store successfully" });
+      .json({ code: 201, message: "chỉnh sửa thông tin cửa hàng thành công" });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
@@ -64,7 +69,7 @@ const detailStore = async (req, res, next) => {
     const storeId = req.params.storeId;
     const store = await storeModel.store.findById(storeId).populate("user_id");
     if (!store) {
-      return res.status(404).json({ code: 404, message: "Store not found" });
+      return res.status(404).json({ code: 404, message: "không tìm thấy cửa hàng" });
     }
     return res
       .status(200)
@@ -89,7 +94,7 @@ const uploadBanner = async (req, res, next) => {
           .json({ code: 200, message: "update banner successfully" });
       })
       .catch(() => {
-        return res.status(404).json({ code: 404, message: "store not found" });
+        return res.status(404).json({ code: 404, message: "không tìm thấy cửa hàng" });
       });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
@@ -111,7 +116,7 @@ const uploadAvatar = async (req, res, next) => {
           .json({ code: 200, message: "update avatar successfully" });
       })
       .catch(() => {
-        return res.status(404).json({ code: 404, message: "store not found" });
+        return res.status(404).json({ code: 404, message: "không tìm thấy cửa hàng" });
       });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
@@ -123,7 +128,7 @@ const deleteStore = async (req, res, next) => {
     const storeId = req.params.storeId;
     const store = await storeModel.store.findById(storeId);
     if (!store) {
-      return res.status(404).json({ code: 404, message: "Store not found" });
+      return res.status(404).json({ code: 404, message: "không tìm thấy cửa hàng" });
     }
     await storeModel.store
       .findByIdAndDelete(storeId)

@@ -9,10 +9,10 @@ const optionSchema = new db.mongoose.Schema(
     ram: { type: Number },
     rom: { type: Number },
     price: { type: Number },
-    discount_value: { type: Number },
-    quantity: { type: Number },
-    soldQuantity: { type: Number, default: 0 },
-    hot_option: { type: Boolean },
+    discount_value: { type: Number }, 
+    quantity: { type: Number }, // số lượng của sản phẩm
+    soldQuantity: { type: Number, default: 0 }, // số lượng đã bán
+    hot_option: { type: Boolean, default: false },// option tốt nổi bật nhất
   },
   { timestamps: true }
 );
