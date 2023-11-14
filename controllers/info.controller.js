@@ -18,107 +18,73 @@ const getInfo = async (req, res, next) => {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
-const addInfo = async (req, res, next) => {
+// Create new info
+const createInfo = async (req, res, next) => {
   try {
-    const uid = req.user._id;
-    if (!uid) {
-      return res
-        .status(400)
-        .json({ code: 400, message: "user id is required" });
-    }
-    const user = await accountModel.account.findById(uid);
-    if (!user) {
-      return res.status(404).json({ code: 404, message: "Account not found" });
-    }
-    const { address, phone_number } = req.body;
-    if (!address || !phone_number) {
-      return res
-        .status(400)
-        .json({ code: 400, message: "Address and phone are required" });
-    }
-    const phonePattern = /^(03|05|07|08|09)[0-9]{8}$/;
-    if (!phonePattern.test(phone_number)) {
-      return res
-        .status(400)
-        .json({ code: 400, message: "Invalid phone number" });
+    const user_id = req.user._id;
+    const { name, address, phone_number, checked } = req.body;
+
+    // If checked is true, update other info items for the user to false
+    if (checked) {
+      await infoModel.info.updateMany(
+        { user_id },
+        { $set: { checked: false } }
+      );
     }
 
-    console.log("phone: ", phone_number);
-
-    const exitPhoneNumber = await infoModel.info.findOne({
-      phone_number: phone_number,
+    const newInfo = new infoModel.info({
+      user_id,
+      name,
+      address,
+      phone_number,
+      checked: checked || false,
     });
-    console.log("exit: ", exitPhoneNumber);
-    if (exitPhoneNumber) {
-      console.log("a");
-      return res
-        .status(409)
-        .json({ code: 409, message: "phone number already exists" });
-    }
 
-    const data = new infoModel.info({ user_id: uid, address, phone_number });
-
-    await data.save();
-    return res
-      .status(201)
-      .json({ code: 201, message: "created info successfully" });
+    await newInfo.save();
+    res.status(201).json({
+      code: 201,
+      message: "Info created successfully!",
+    });
   } catch (error) {
-    return res.status(500).json({ code: 500, message: error.message });
+    console.error("Error in createInfo:", error);
+    res.status(500).json({ code: 500, message: "Internal Server Error" });
   }
 };
-const updateInfo = async (req, res, next) => {
+
+// Update info by user ID
+const updateInfoByUserId = async (req, res, next) => {
   try {
-    const { infoId } = req.params;
-    const uid = req.user._id;
-    if (!uid) {
-      return res
-        .status(400)
-        .json({ code: 400, message: "user id is required" });
-    }
-    const user = await accountModel.account.findById(uid);
-    if (!user) {
-      return res.status(404).json({ code: 404, message: "Account not found" });
-    }
-    const { address, phone_number } = req.body;
-    if (!address || !phone_number) {
-      return res
-        .status(400)
-        .json({ code: 400, message: "Address and phone are required" });
-    }
-    const phonePattern = /^(03|05|07|08|09)[0-9]{8}$/;
-    if (!phonePattern.test(phone_number)) {
-      return res
-        .status(400)
-        .json({ code: 400, message: "Invalid phone number" });
+    const user_id = req.user._id;
+    const updateData = req.body;
+
+    // If checked is true, update other info items for the user to false
+    if (updateData.checked) {
+      await infoModel.info.updateMany(
+        { user_id },
+        { $set: { checked: false } }
+      );
     }
 
-    console.log("phone: ", phone_number);
+    const updatedInfo = await infoModel.info.findOneAndUpdate(
+      { user_id },
+      updateData,
+      { new: true }
+    );
 
-    const exitPhoneNumber = await infoModel.info.findOne({
-      phone_number: phone_number,
+    if (!updatedInfo) {
+      return res.status(404).json({ code: 404, message: "Info not found" });
+    }
+
+    res.status(200).json({
+      code: 200,
+      message: "Info updated successfully!",
     });
-    console.log("exit: ", exitPhoneNumber);
-    if (exitPhoneNumber) {
-      console.log("a");
-      return res
-        .status(409)
-        .json({ code: 409, message: "phone number already exists" });
-    }
-
-    await infoModel.info
-      .findByIdAndUpdate(infoId, { address, phone_number })
-      .then(() => {
-        return res
-          .status(200)
-          .json({ code: 200, message: "update info successfully" });
-      })
-      .catch(() => {
-        return res.status(404).json({ code: 404, message: "info not found" });
-      });
   } catch (error) {
-    return res.status(500).json({ code: 500, message: error.message });
+    console.error("Error in updateInfoByUserId:", error);
+    res.status(500).json({ code: 500, message: "Internal Server Error" });
   }
 };
+
 const deleteInfo = async (req, res, next) => {
   try {
     const { infoId } = req.params;
@@ -149,7 +115,7 @@ const deleteInfo = async (req, res, next) => {
 
 module.exports = {
   getInfo,
-  addInfo,
-  updateInfo,
+  createInfo,
+  updateInfoByUserId,
   deleteInfo,
 };
