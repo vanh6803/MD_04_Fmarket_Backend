@@ -7,8 +7,10 @@ const infoSchema = new db.mongoose.Schema(
       ref: "account",
       required: true,
     },
+    name: { type: String, required: true },
     address: { type: String, required: true },
     phone_number: { type: String, required: true },
+    checked: { type: Boolean, default: false}
   },
   {
     timestamps: true,
