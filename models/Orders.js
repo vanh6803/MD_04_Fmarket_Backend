@@ -5,7 +5,7 @@ const orderSchema = new db.mongoose.Schema(
     user_id: { type: db.mongoose.Schema.Types.ObjectId, ref: "account" },
     productsOrder: [
       {
-        option: { type: db.mongoose.Schema.Types.ObjectId, ref: "option" },
+        option_id: { type: db.mongoose.Schema.Types.ObjectId, ref: "option" },
         quantity: { type: Number },
       },
     ],

@@ -85,14 +85,47 @@ const resetPassword = async (req, res, next) => {
 
 const allUser = async (req, res, next) => {
   try {
-    const users = model.account.find();
-    return res
-      .status(200)
-      .json({ code: 200, message: "get all success", result: users });
+    const page = parseInt(req.query.page) || 1;
+    const pageItem = parseInt(req.query.pageItem) || 100000;
+    const role = req.query.role;
+
+    const totalUsers = await model.account.countDocuments();
+    const totalPages = Math.ceil(totalUsers / pageItem);
+
+    const users = await model.account
+      .find(role ? { role_id: role } : null)
+      .skip((page - 1) * pageItem)
+      .limit(pageItem);
+    const result = users.map((user) => {
+      return {
+        _id: user._id,
+        email: user.email,
+        username: user.username,
+        full_name: user.full_name,
+        avatar: user.avatar,
+        role: user.role_id,
+        is_active: user.is_active,
+      };
+    });
+    return res.status(200).json({
+      code: 200,
+      result: result,
+      totalPages: totalPages,
+      currentPage: page,
+      message: "get all success",
+    });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
+
+const changeActiveUser = (req, res, next ) => {
+  try {
+    
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+}
 
 module.exports = {
   detailProfile,

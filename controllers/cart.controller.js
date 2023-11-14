@@ -1,14 +1,32 @@
 const models = require("../models/Cart");
+const optionModels = require("../models/Option");
 
 const listCartForUser = async (req, res, next) => {
   try {
     const uid = req.user._id;
-    const cart = await models.cart
+    const carts = await models.cart
       .find({ user_id: uid })
       .populate(["option_id", "user_id"]);
+    const result = await Promise.all(
+      carts.map(async (cart) => {
+        const options = await optionModels.option
+          .findById(cart.option_id._id)
+          .populate("product_id");
+        return {
+          ...cart._doc,
+          option_id: {
+            ...options._doc,
+            product_id: {
+              _id: options.product_id._id,
+              name: options.product_id.name,
+            },
+          },
+        };
+      })
+    );
     return res.status(200).json({
       code: 200,
-      data: cart ? cart : [],
+      data: result || [],
       message: "get data successfully!",
     });
   } catch (error) {
@@ -32,13 +50,11 @@ const createCartItem = async (req, res, next) => {
         { new: true }
       );
 
-      return res
-        .status(200)
-        .json({
-          code: 200,
-          data: updatedCartItem,
-          message: "Cart item updated successfully!",
-        });
+      return res.status(200).json({
+        code: 200,
+        data: updatedCartItem,
+        message: "Cart item updated successfully!",
+      });
     } else {
       // If the cart item doesn't exist, create a new one
       const newCartItem = await models.cart.create({
@@ -47,13 +63,11 @@ const createCartItem = async (req, res, next) => {
         quantity,
       });
 
-      return res
-        .status(201)
-        .json({
-          code: 201,
-          data: newCartItem,
-          message: "Cart item created successfully!",
-        });
+      return res.status(201).json({
+        code: 201,
+        data: newCartItem,
+        message: "Cart item created successfully!",
+      });
     }
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });

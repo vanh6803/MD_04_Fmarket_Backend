@@ -4,8 +4,12 @@ var controller = require("../controllers/info.controller");
 var middleware = require("../middleware/auth.middleware");
 
 router.get("/", middleware.checkToken, controller.getInfo);
-router.post("/add", middleware.checkToken, controller.addInfo);
-router.put("/edit-info/:infoId", middleware.checkToken, controller.updateInfo);
+router.post("/add", middleware.checkToken, controller.createInfo);
+router.put(
+  "/edit-info/:infoId",
+  middleware.checkToken,
+  controller.updateInfoByUserId
+);
 router.delete("/delete/:infoId", middleware.checkToken, controller.deleteInfo);
 
 module.exports = router;
