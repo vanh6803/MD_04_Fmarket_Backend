@@ -19,12 +19,13 @@ const checkToken = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    console.log(error);
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({ code: 401, message: "Token has expired" });
+    }
+    console.error(error);
     res.status(401).json({ code: 401, message: error.message });
   }
 };
-
-
 
 module.exports = {
   checkToken,

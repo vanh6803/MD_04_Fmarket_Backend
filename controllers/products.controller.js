@@ -186,6 +186,8 @@ const getAllProducts = async (req, res, next) => {
 
     // Calculate the skip value based on page number and items per page
     const skip = (page - 1) * itemsPerPage;
+    const totalProducts = await productModel.product.countDocuments();
+    const totalPages = Math.ceil(totalProducts / itemsPerPage);
 
     const products = await productModel.product
       .find()
@@ -217,6 +219,7 @@ const getAllProducts = async (req, res, next) => {
     return res.status(200).json({
       code: 200,
       result: finalResult,
+      totalPages: totalPages,
       message: "get all product successfull",
     });
   } catch (error) {
