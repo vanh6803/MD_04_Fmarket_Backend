@@ -9,7 +9,7 @@ router.put(
   middleware.checkToken,
   controller.updateOrderStatus
 );
-router.post("/", middleware.checkToken, controller.getOrdersByUserId);
+router.get("/", middleware.checkToken, controller.getOrdersByUserId);
 router.post(
   "/detail-order/:orderId",
   middleware.checkToken,

@@ -119,13 +119,12 @@ const allUser = async (req, res, next) => {
   }
 };
 
-const changeActiveUser = (req, res, next ) => {
+const changeActiveUser = (req, res, next) => {
   try {
-    
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
-}
+};
 
 module.exports = {
   detailProfile,
