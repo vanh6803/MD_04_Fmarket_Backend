@@ -156,7 +156,9 @@ const login = async (req, res, next) => {
     }
 
     // if password matches, create a new token
-    const token = jwt.sign({ userId: user._id }, process.env.KEY_TOKEN);
+    const token = jwt.sign({ userId: user._id }, process.env.KEY_TOKEN, {
+      expiresIn: "14d",
+    });
 
     // update token to db
     user.token = token;

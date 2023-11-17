@@ -5,9 +5,10 @@ const createOrder = async (req, res, next) => {
   try {
     const { user_id, productsOrder, status, info_id } = req.body;
     // Tính toán total_price dựa trên productsOrder
+
     let total_price = 0;
     for (const productOrder of productsOrder) {
-      const option = await optionModel.option.findById(productOrder.option);
+      const option = await optionModel.option.findById(productOrder.option_id);
 
       if (option) {
         const optionPrice = option.price;
@@ -37,11 +38,41 @@ const getOrdersByUserId = async (req, res, next) => {
   try {
     const userId = req.user._id;
 
-    const orders = await orderModel.order.find({ user_id: userId });
+    const orders = await orderModel.order
+      .find({ user_id: userId })
+      .populate(["user_id", "info_id"]);
+
+    const result = await Promise.all(
+      orders.map(async (order) => {
+        const productsOrder = await Promise.all(
+          order.productsOrder.map(async (productOrder) => {
+            const option = await optionModel.option
+              .findById(productOrder.option_id)
+              .lean(); // Use lean to convert Mongoose document to plain JavaScript object
+
+            return {
+              option,
+              quantity: productOrder.quantity,
+            };
+          })
+        );
+
+        return {
+          _id: order._id,
+          user_id: order.user_id,
+          info_id: order.info_id,
+          productsOrder,
+          total_price: order.total_price,
+          status: order.status,
+          createdAt: order.createdAt,
+          updatedAt: order.updatedAt,
+        };
+      })
+    );
 
     return res.status(200).json({
       code: 200,
-      result: orders,
+      result: result,
       message: "created order successfully",
     });
   } catch (error) {
