@@ -56,7 +56,7 @@ const resetPassword = async (req, res, next) => {
   try {
     const uid = req.params.uid;
     const user = await model.account.findById(uid);
-    let {oldPassword, newPassword} = req.body
+    let { oldPassword, newPassword } = req.body;
     if (!user) {
       return res.status(404).json({ code: 404, message: "User not found" });
     }
@@ -69,7 +69,7 @@ const resetPassword = async (req, res, next) => {
     }
 
     const salt = await bcrypt.genSalt(10);
-    newPassword = await bcrypt.hash(newPassword, salt) 
+    newPassword = await bcrypt.hash(newPassword, salt);
     await model.account.findByIdAndUpdate(
       uid,
       { password: newPassword },
@@ -83,10 +83,54 @@ const resetPassword = async (req, res, next) => {
   }
 };
 
+const allUser = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const pageItem = parseInt(req.query.pageItem) || 100000;
+    const role = req.query.role;
+
+    const totalUsers = await model.account.countDocuments();
+    const totalPages = Math.ceil(totalUsers / pageItem);
+
+    const users = await model.account
+      .find(role ? { role_id: role } : null)
+      .skip((page - 1) * pageItem)
+      .limit(pageItem);
+    const result = users.map((user) => {
+      return {
+        _id: user._id,
+        email: user.email,
+        username: user.username,
+        full_name: user.full_name,
+        avatar: user.avatar,
+        role: user.role_id,
+        is_active: user.is_active,
+      };
+    });
+    return res.status(200).json({
+      code: 200,
+      result: result,
+      totalPages: totalPages,
+      currentPage: page,
+      message: "get all success",
+    });
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
+const changeActiveUser = (req, res, next ) => {
+  try {
+    
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+}
 
 module.exports = {
   detailProfile,
   resetPassword,
   editProfile,
   uploadAvatar,
+  allUser,
 };
