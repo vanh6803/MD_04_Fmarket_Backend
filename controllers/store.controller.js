@@ -179,6 +179,23 @@ const checkExitingStore = async (req, res, next) => {
   }
 };
 
+const getStoreIdByAccountId = async (req, res, next) => {
+  try {
+    const accountId = req.params.accountId;
+    const store = await storeModel.store.findOne({ account_id: accountId });
+    if (!store) {
+      return res
+        .status(404)
+        .json({ code: 404, message: "không tìm thấy cửa hàng" });
+    }
+    return res
+      .status(200)
+      .json({ code: 200, data: store._id, message: "get id store successfully" });
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+}
+
 module.exports = {
   createStore,
   detailStore,
@@ -187,4 +204,5 @@ module.exports = {
   uploadBanner,
   uploadAvatar,
   checkExitingStore,
+  getStoreIdByAccountId
 };
