@@ -4,6 +4,8 @@ var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 var cors = require("cors");
+const http = require('http');
+const socketIo = require('socket.io');
 
 var siteRouter = require("./routes/site.route");
 var productsRouter = require("./routes/products.route");
@@ -38,6 +40,21 @@ app.use("/api/order", orderRoute);
 app.use("/api/cart", cartRoute);
 app.use("/api/info", infoRoute);
 app.use("/api/banner", bannerRoute);
+
+const server = http.createServer(app);
+const io = socketIo(server);
+app.get('/', (req, res) => {
+  res.send("server is running!");
+});
+
+io.on('connection', (data) => {
+  console.log(`connection data: ${data}`);
+  data.on('data', (msg) => {
+    console.log(`new msg: ${msg}`);
+    data.emit('new_message',msg);
+  });
+});
+
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

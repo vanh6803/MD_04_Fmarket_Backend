@@ -37,6 +37,7 @@ router.put(
 );
 router.get("/info/:storeId", middlware.checkToken, controller.detailStore);
 router.get("/check-exiting", middlware.checkToken, controller.checkExitingStore);
+router.get("/get-store-id/:accountId", middlware.checkToken, controller.getStoreIdByAccountId);
 // router.delete("/delete/:storeId", middlware.checkToken, controller.deleteStore);
 
 module.exports = router;
