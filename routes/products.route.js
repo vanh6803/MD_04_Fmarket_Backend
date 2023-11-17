@@ -20,12 +20,22 @@ router.get("/all-product-by-category", controller.getProductsByCategory);
 router.get("/detail-product/:productId", controller.detailProduct);
 router.get("/similar-product/:productId", controller.getSimilarProducts);
 //product
-router.post("/create-product", controller.addProduct);
-router.put("/update-product/:productId", controller.updateProduct);
+router.post("/create-product", middleware.checkToken, controller.addProduct);
+router.put(
+  "/update-product/:productId",
+  middleware.checkToken,
+  controller.updateProduct
+);
 //option
-router.post("/create-option", upload.single("image"), controller.addOption);
+router.post(
+  "/create-option",
+  middleware.checkToken,
+  upload.single("image"),
+  controller.addOption
+);
 router.put(
   "/update-option/:optionId",
+  middleware.checkToken,
   upload.single("image"),
   controller.updateOption
 );

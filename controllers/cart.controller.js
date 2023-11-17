@@ -46,7 +46,11 @@ const createCartItem = async (req, res, next) => {
       // If the cart item exists, update the quantity
       const updatedCartItem = await models.cart.findOneAndUpdate(
         { user_id, option_id },
-        { $set: { quantity: existingCartItem.quantity + quantity } },
+        {
+          $set: {
+            quantity: parseInt(existingCartItem.quantity) + parseInt(quantity),
+          },
+        },
         { new: true }
       );
 
