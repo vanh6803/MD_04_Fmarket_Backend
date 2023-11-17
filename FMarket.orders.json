@@ -1,0 +1,71 @@
+[{
+  "_id": {
+    "$oid": "65577aa472a8bc0fa2d9c908"
+  },
+  "user_id": {
+    "$oid": "654ca5874944f00aacf686b1"
+  },
+  "productsOrder": [
+    {
+      "option_id": {
+        "$oid": "654f7e504e2ee31c0e3cc1c9"
+      },
+      "quantity": 1,
+      "_id": {
+        "$oid": "65577aa472a8bc0fa2d9c909"
+      }
+    },
+    {
+      "option_id": {
+        "$oid": "654f8d9ec986bac12ce1e2e6"
+      },
+      "quantity": 2,
+      "_id": {
+        "$oid": "65577aa472a8bc0fa2d9c90a"
+      }
+    }
+  ],
+  "total_price": 0,
+  "status": "Chờ xử lý",
+  "info_id": {
+    "$oid": "6553332dd43e78ef1a6b74c2"
+  },
+  "createdAt": {
+    "$date": "2023-11-17T14:37:24.145Z"
+  },
+  "updatedAt": {
+    "$date": "2023-11-17T14:37:24.145Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "65577aa472a8bc0fa2d9c90b"
+  },
+  "user_id": {
+    "$oid": "654ca5874944f00aacf686b1"
+  },
+  "productsOrder": [
+    {
+      "option_id": {
+        "$oid": "65534cb86f126abe648d89f6"
+      },
+      "quantity": 2,
+      "_id": {
+        "$oid": "65577aa472a8bc0fa2d9c90c"
+      }
+    }
+  ],
+  "total_price": 0,
+  "status": "Chờ xử lý",
+  "info_id": {
+    "$oid": "6553332dd43e78ef1a6b74c2"
+  },
+  "createdAt": {
+    "$date": "2023-11-17T14:37:24.146Z"
+  },
+  "updatedAt": {
+    "$date": "2023-11-17T14:37:24.146Z"
+  },
+  "__v": 0
+}]

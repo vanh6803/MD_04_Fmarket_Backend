@@ -4,27 +4,60 @@ const optionModel = require("../models/Option");
 const createOrder = async (req, res, next) => {
   try {
     const { user_id, productsOrder, status, info_id } = req.body;
-    // Tính toán total_price dựa trên productsOrder
 
-    let total_price = 0;
+    // Sử dụng đối tượng để theo dõi store_id và productsOrder tương ứng
+    const storeOrders = {};
+
     for (const productOrder of productsOrder) {
-      const option = await optionModel.option.findById(productOrder.option_id);
+      const option = await optionModel.option
+        .findById(productOrder.option_id)
+        .populate("product_id");
 
-      if (option) {
-        const optionPrice = option.price;
-        const quantity = productOrder.quantity;
-        total_price += optionPrice * quantity;
+      const store_id = option?.product_id.store_id;
+
+      // Nếu store_id đã xuất hiện, thêm vào đơn đặt hàng tương ứng
+      if (storeOrders[store_id]) {
+        storeOrders[store_id].productsOrder.push({
+          option_id: productOrder.option_id,
+          quantity: productOrder.quantity,
+        });
+      } else {
+        // Nếu store_id chưa xuất hiện, tạo một đơn đặt hàng mới
+        storeOrders[store_id] = {
+          user_id,
+          productsOrder: [
+            {
+              option_id: productOrder.option_id,
+              quantity: productOrder.quantity,
+            },
+          ],
+          status,
+          info_id,
+        };
       }
     }
-    const newOrder = new orderModel.order({
-      user_id,
-      productsOrder,
-      total_price,
-      status,
-      info_id,
+
+    // Tạo đơn đặt hàng từ các storeOrders
+    const orderPromises = Object.values(storeOrders).map(async (orderData) => {
+      orderData.total_price = 0;
+      for (const productOrder of orderData.productsOrder) {
+        const option = await optionModel.option
+          .findById(productOrder.option_id)
+          .populate("product_id");
+
+        const productPrice = option.price || 0;
+        orderData.total_price += productPrice * productOrder.quantity;
+      }
+
+      const newOrder = new orderModel.order({
+        ...orderData,
+      });
+      
+      await newOrder.save();
     });
 
-    await newOrder.save();
+    // Đợi tất cả các đơn đặt hàng được tạo xong
+    await Promise.all(orderPromises);
 
     return res
       .status(201)
