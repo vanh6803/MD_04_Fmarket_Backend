@@ -41,21 +41,6 @@ app.use("/api/cart", cartRoute);
 app.use("/api/info", infoRoute);
 app.use("/api/banner", bannerRoute);
 
-const server = http.createServer(app);
-const io = socketIo(server);
-app.get('/', (req, res) => {
-  res.send("server is running!");
-});
-
-io.on('connection', (data) => {
-  console.log(`connection data: ${data}`);
-  data.on('data', (msg) => {
-    console.log(`new msg: ${msg}`);
-    data.emit('new_message',msg);
-  });
-});
-
-
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
   next(createError(404));
