@@ -4,49 +4,60 @@ const optionModel = require("../models/Option");
 const createOrder = async (req, res, next) => {
   try {
     const { user_id, productsOrder, status, info_id } = req.body;
-    // Tính toán total_price dựa trên productsOrder
 
-    // Step 1: Lọc các option theo cửa hàng
-    const storeOptions = {};
+    // Sử dụng đối tượng để theo dõi store_id và productsOrder tương ứng
+    const storeOrders = {};
+
     for (const productOrder of productsOrder) {
       const option = await optionModel.option
         .findById(productOrder.option_id)
         .populate("product_id");
 
-      if (option) {
-        const store_id = option.product_id.store_id.toString();
-        console.log(store_id); // Chuyển store_id sang kiểu string để sử dụng như key trong đối tượng
-        if (!storeOptions[store_id]) {
-          storeOptions[store_id] = [];
-        }
-        storeOptions[store_id].push({
-          option,
+      const store_id = option?.product_id.store_id;
+
+      // Nếu store_id đã xuất hiện, thêm vào đơn đặt hàng tương ứng
+      if (storeOrders[store_id]) {
+        storeOrders[store_id].productsOrder.push({
+          option_id: productOrder.option_id,
           quantity: productOrder.quantity,
         });
+      } else {
+        // Nếu store_id chưa xuất hiện, tạo một đơn đặt hàng mới
+        storeOrders[store_id] = {
+          user_id,
+          productsOrder: [
+            {
+              option_id: productOrder.option_id,
+              quantity: productOrder.quantity,
+            },
+          ],
+          status,
+          info_id,
+        };
       }
     }
 
-    // Step 2: Tính toán total_price cho từng cửa hàng và lưu đơn hàng
-    for (const store_id in storeOptions) {
-      let total_price = 0;
-      const storeProductsOrder = storeOptions[store_id];
+    // Tạo đơn đặt hàng từ các storeOrders
+    const orderPromises = Object.values(storeOrders).map(async (orderData) => {
+      orderData.total_price = 0;
+      for (const productOrder of orderData.productsOrder) {
+        const option = await optionModel.option
+          .findById(productOrder.option_id)
+          .populate("product_id");
 
-      for (const { option, quantity } of storeProductsOrder) {
-        const optionPrice = option.price;
-        total_price += optionPrice * quantity;
+        const productPrice = option.price || 0;
+        orderData.total_price += productPrice * productOrder.quantity;
       }
 
-      // Step 3: Lưu đơn hàng vào cơ sở dữ liệu
       const newOrder = new orderModel.order({
-        user_id,
-        productsOrder: storeProductsOrder,
-        total_price,
-        status,
-        info_id,
+        ...orderData,
       });
-
+      
       await newOrder.save();
-    }
+    });
+
+    // Đợi tất cả các đơn đặt hàng được tạo xong
+    await Promise.all(orderPromises);
 
     return res
       .status(201)
