@@ -7,6 +7,7 @@ router.post("/create-order", middleware.checkToken, controller.createOrder);
 router.put(
   "/update-order-status/:orderId",
   middleware.checkToken,
+  middleware.checkStoreExits,
   controller.updateOrderStatus
 );
 router.get("/", middleware.checkToken, controller.getOrdersByUserId);
@@ -14,6 +15,12 @@ router.get(
   "/detail-order/:orderId",
   middleware.checkToken,
   controller.detailOrders
+);
+router.get(
+  "/order-for-store/:store_id",
+  middleware.checkToken,
+  middleware.checkStoreExits,
+  controller.ordersForStore
 );
 
 module.exports = router;

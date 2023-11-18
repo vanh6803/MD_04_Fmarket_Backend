@@ -85,6 +85,14 @@ const resetPassword = async (req, res, next) => {
 
 const allUser = async (req, res, next) => {
   try {
+    const user = req.user;
+    if (user.role_id != "admin") {
+      return res.status(403).json({
+        code: 403,
+        message: "You do not have permission to use this function",
+      });
+    }
+
     const page = parseInt(req.query.page) || 1;
     const pageItem = parseInt(req.query.pageItem) || 100000;
     const role = req.query.role;
@@ -119,8 +127,49 @@ const allUser = async (req, res, next) => {
   }
 };
 
-const changeActiveUser = (req, res, next) => {
+const changeActiveUser = async (req, res, next) => {
   try {
+    const user = req.user;
+    if (user.role_id != "admin") {
+      return res.status(403).json({
+        code: 403,
+        message: "You do not have permission to use this function",
+      });
+    }
+
+    const { uid } = req.params;
+
+    await model.account.findByIdAndUpdate(uid, { is_active: false });
+    return res
+      .status(200)
+      .json({ code: 200, message: "change active user successfully" });
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
+const createAccountStaff = async (req, res, next) => {
+  try {
+    const user = req.user;
+    if (user.role_id != "admin") {
+      return res.status(403).json({
+        code: 403,
+        message: "You do not have permission to use this function",
+      });
+    }
+    const { email, password, role_id } = req.body;
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+    const newAccount = await model.account.create({
+      email: email,
+      password: passwordHash,
+      role_id: "staff",
+      is_active: true,
+      isVerify: true,
+    });
+    return res
+      .status(201)
+      .json({ code: 201, result: newAccount, message: "created successfully" });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
@@ -132,4 +181,6 @@ module.exports = {
   editProfile,
   uploadAvatar,
   allUser,
+  createAccountStaff,
+  changeActiveUser,
 };

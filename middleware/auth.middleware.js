@@ -39,6 +39,11 @@ const checkStoreExits = async (req, res, next) => {
         isExiting: true,
       });
     }
+    if (store.is_active == false) {
+      return res
+        .status(403)
+        .json({ code: 403, message: "your store is not active" });
+    }
     req.store = store;
     next();
   } catch (error) {

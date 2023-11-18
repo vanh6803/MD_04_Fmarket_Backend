@@ -148,6 +148,10 @@ const login = async (req, res, next) => {
         .json({ code: 401, message: "Unauthenticated email", isVerify: false });
     }
 
+    if(user.is_active == false){
+      return res.status(403).json({ code: 403, message: "your account is inactive"})
+    }
+
     // compare password
     const passwordMatch = await bcrypt.compare(password, user.password);
 
