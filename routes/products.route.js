@@ -20,24 +20,33 @@ router.get("/all-product-by-category", controller.getProductsByCategory);
 router.get("/detail-product/:productId", controller.detailProduct);
 router.get("/similar-product/:productId", controller.getSimilarProducts);
 //product
-router.post("/create-product", middleware.checkToken, controller.addProduct);
+router.post(
+  "/create-product",
+  middleware.checkToken,
+  middleware.checkStoreExits,
+  controller.addProduct
+);
 router.put(
   "/update-product/:productId",
   middleware.checkToken,
-  controller.updateProduct
-);
+  middleware.checkStoreExits,
+router.post("/create-product", middleware.checkToken, controller.addProduct);
+
 //option
 router.post(
   "/create-option",
   middleware.checkToken,
+  middleware.checkStoreExits,
   upload.single("image"),
   controller.addOption
 );
 router.put(
   "/update-option/:optionId",
   middleware.checkToken,
+  middleware.checkStoreExits,
   upload.single("image"),
   controller.updateOption
 );
+
 
 module.exports = router;

@@ -4,8 +4,9 @@ const optionModel = require("../models/Option");
 const storeModel = require("../models/Store");
 const productRateModel = require("../models/ProductRate");
 
-const addProduct = async (req, res) => {
+const addProduct = async (req, res, next) => {
   try {
+    const store_id = req.store._id;
     const dataBody = req.body;
     const category = await categoryModel.category.findById(
       dataBody.category_id
@@ -13,11 +14,22 @@ const addProduct = async (req, res) => {
     if (!category) {
       return res.status(404).json({ code: 404, message: "no found category!" });
     }
-    const store = await storeModel.store.findById(dataBody.store_id);
+    const store = await storeModel.store.findById(store_id);
     if (!store) {
       return res.status(404).json({ code: 404, message: "no found store!" });
     }
-    const product = new productModel.product(req.body);
+    if (!dataBody.name) {
+      return res.status(404).json({ code: 404, message: "name is required" });
+    }
+    if (!dataBody.manufacturer) {
+      return res
+        .status(404)
+        .json({ code: 404, message: "manufacturer is required" });
+    }
+    if (!dataBody.status) {
+      return res.status(404).json({ code: 404, message: "status is required" });
+    }
+    const product = new productModel.product({ ...req.body, store_id });
     await product.save();
     console.log(product);
     category.product.push(product._id);
@@ -54,7 +66,7 @@ const updateProduct = async (req, res, next) => {
   }
 };
 
-const addOption = async (req, res) => {
+const addOption = async (req, res, next) => {
   try {
     const dataBody = req.body;
     const product = await productModel.product.findById(dataBody.product_id);
@@ -372,6 +384,22 @@ const getImageHotOption = async (product_id) => {
     throw error;
   }
 };
+
+const deleteOption = async (req, res, next) =>{
+  try {
+    const {optionId} = req.params
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+}
+
+const deleteProduct = async (req, res, next) =>{
+  try {
+    const {productId} = req.params
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+}
 
 module.exports = {
   addOption,

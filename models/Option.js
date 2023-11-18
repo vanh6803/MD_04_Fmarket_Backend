@@ -6,8 +6,6 @@ const optionSchema = new db.mongoose.Schema(
     name_color: { type: String },
     color_code: { type: String },
     image: { type: String },
-    ram: { type: Number },
-    rom: { type: Number },
     price: { type: Number },
     discount_value: { type: Number }, 
     quantity: { type: Number }, // số lượng của sản phẩm
