@@ -3,7 +3,8 @@ const optionModel = require("../models/Option");
 
 const createOrder = async (req, res, next) => {
   try {
-    const { user_id, productsOrder, status, info_id } = req.body;
+    const user_id = req.user._id;
+    const { productsOrder, info_id } = req.body;
 
     // Sử dụng đối tượng để theo dõi store_id và productsOrder tương ứng
     const storeOrders = {};
@@ -31,7 +32,6 @@ const createOrder = async (req, res, next) => {
               quantity: productOrder.quantity,
             },
           ],
-          status,
           info_id,
         };
       }
@@ -52,7 +52,7 @@ const createOrder = async (req, res, next) => {
       const newOrder = new orderModel.order({
         ...orderData,
       });
-      
+
       await newOrder.save();
     });
 

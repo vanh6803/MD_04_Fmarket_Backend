@@ -10,7 +10,7 @@ router.put(
   controller.updateOrderStatus
 );
 router.get("/", middleware.checkToken, controller.getOrdersByUserId);
-router.post(
+router.get(
   "/detail-order/:orderId",
   middleware.checkToken,
   controller.detailOrders
