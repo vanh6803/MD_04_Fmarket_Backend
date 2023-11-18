@@ -30,7 +30,8 @@ router.put(
   "/update-product/:productId",
   middleware.checkToken,
   middleware.checkStoreExits,
-router.post("/create-product", middleware.checkToken, controller.addProduct);
+  controller.updateProduct
+);
 
 //option
 router.post(
@@ -47,6 +48,5 @@ router.put(
   upload.single("image"),
   controller.updateOption
 );
-
 
 module.exports = router;
