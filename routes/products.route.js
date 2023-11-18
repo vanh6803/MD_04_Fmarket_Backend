@@ -30,8 +30,8 @@ router.put(
   "/update-product/:productId",
   middleware.checkToken,
   middleware.checkStoreExits,
-  controller.updateProduct
-);
+router.post("/create-product", middleware.checkToken, controller.addProduct);
+
 //option
 router.post(
   "/create-option",
