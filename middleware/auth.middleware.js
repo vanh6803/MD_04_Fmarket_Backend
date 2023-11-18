@@ -1,5 +1,6 @@
 const model = require("../models/Account");
 const jwt = require("jsonwebtoken");
+const storeModel = require("../models/Store");
 
 const checkToken = async (req, res, next) => {
   let header_token = req.header("Authorization");
@@ -27,6 +28,25 @@ const checkToken = async (req, res, next) => {
   }
 };
 
+const checkStoreExits = async (req, res, next) => {
+  try {
+    const uid = req.user._id;
+    const store = await storeModel.store.findOne({ account_id: uid });
+    if (!store) {
+      return res.status(409).json({
+        code: 409,
+        message: "cửa hàng này chưa tồn tại",
+        isExiting: true,
+      });
+    }
+    req.store = store;
+    next();
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
 module.exports = {
   checkToken,
+  checkStoreExits,
 };
