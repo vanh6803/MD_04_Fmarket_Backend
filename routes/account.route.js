@@ -34,8 +34,14 @@ router.put(
   controller.uploadAvatar
 );
 
-router.get("/customers", controller.allUser);
-
+// dành cho admin hoặc staff
+router.get("/customers", middleware.checkToken, controller.allUser);
+router.post(
+  "/create-staff",
+  middleware.checkToken,
+  controller.createAccountStaff
+);
+router.put('change-active-account/:uid', middleware.checkToken, controller.changeActiveUser);
 // router.delete("/delete-account/:uid", middleware.checkToken, controller.deleteAccount)
 
 module.exports = router;
