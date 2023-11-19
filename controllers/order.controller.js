@@ -86,7 +86,7 @@ const getOrdersByUserId = async (req, res, next) => {
               .populate("product_id"); // Use lean to convert Mongoose document to plain JavaScript object
 
             return {
-              option,
+              option_id: option,
               quantity: productOrder.quantity,
             };
           })
@@ -183,7 +183,7 @@ const ordersForStore = async (req, res, next) => {
               .populate("product_id"); // Use lean to convert Mongoose document to plain JavaScript object
 
             return {
-              option,
+              option_id: option,
               quantity: productOrder.quantity,
             };
           })
