@@ -46,8 +46,9 @@ const createOrder = async (req, res, next) => {
           .findById(productOrder.option_id)
           .populate("product_id");
 
-        const productPrice = option.price || 0;
-        orderData.total_price += productPrice * productOrder.quantity;
+        const productPrice = parseFloat(option.price) || 0;
+        orderData.total_price +=
+          parseFloat(productPrice) * parseInt(productOrder.quantity);
       }
 
       const newOrder = new orderModel.order({
