@@ -72,9 +72,15 @@ const createOrder = async (req, res, next) => {
 const getOrdersByUserId = async (req, res, next) => {
   try {
     const userId = req.user._id;
+    const { status } = req.query;
+
+    const queryCondition = { user_id: userId };
+    if (status) {
+      queryCondition.status = status;
+    }
 
     const orders = await orderModel.order
-      .find({ user_id: userId })
+      .find(queryCondition)
       .populate(["user_id", "info_id"]);
 
     const result = await Promise.all(
