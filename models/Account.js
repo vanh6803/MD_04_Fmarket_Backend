@@ -12,7 +12,7 @@ const accountSchema = new db.mongoose.Schema(
     isVerify: { type: Boolean, default: false },
     confirmationCode: { type: String },
     confirmationExpiration: { type: Date },
-    is_active: { type: Boolean },
+    is_active: { type: Boolean, default: true },
     role_id: {
       type: String,
       enum: ["admin", "customer", "staff"],
