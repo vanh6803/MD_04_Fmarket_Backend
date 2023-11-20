@@ -81,6 +81,7 @@ const getOrdersByUserId = async (req, res, next) => {
 
     const orders = await orderModel.order
       .find(queryCondition)
+      .sort({ updatedAt: -1 })
       .populate(["user_id", "info_id"]);
 
     const result = await Promise.all(
@@ -173,6 +174,7 @@ const ordersForStore = async (req, res, next) => {
       for (const option of options) {
         const optionOrders = await orderModel.order
           .find({ "productsOrder.option_id": option._id })
+          .sort({ updatedAt: -1 })
           .populate(["user_id", "info_id"])
           .lean();
 
