@@ -158,12 +158,12 @@ const detailOrders = async (req, res, next) => {
 
 const ordersForStore = async (req, res, next) => {
   try {
-    const { store_id } = req.params;
-
-    // Bước 1: Lấy danh sách sản phẩm thuộc cửa hàng
+    const store_id = req.store._id;
+    const status = req.query.status;
+    //Lấy danh sách sản phẩm thuộc cửa hàng
     const products = await productModel.product.find({ store_id }).lean();
 
-    // Bước 2-4: Lấy danh sách đơn hàng
+    //Lấy danh sách đơn hàng
     const orders = [];
 
     for (const product of products) {
@@ -173,7 +173,7 @@ const ordersForStore = async (req, res, next) => {
 
       for (const option of options) {
         const optionOrders = await orderModel.order
-          .find({ "productsOrder.option_id": option._id })
+          .find({ "productsOrder.option_id": option._id, status: status })
           .sort({ updatedAt: -1 })
           .populate(["user_id", "info_id"])
           .lean();
