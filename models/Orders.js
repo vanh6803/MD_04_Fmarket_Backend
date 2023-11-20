@@ -12,14 +12,8 @@ const orderSchema = new db.mongoose.Schema(
     total_price: { type: Number }, //tổng tiền tất cả mặt hàng
     status: {
       type: String,
-      enum: [
-        "Chờ xử lý",
-        "Đã giao hàng",
-        "Giao hàng thành công",
-        "Hủy đơn hàng",
-        "Đang giao hàng",
-      ],
-      default: "Chờ xử lý",
+      enum: ["Chờ xác nhận", "Chờ giao hàng", "Đã giao hàng", "Đã hủy"],
+      default: "Chờ xác nhận",
     },
     info_id: {
       type: db.mongoose.Schema.Types.ObjectId,

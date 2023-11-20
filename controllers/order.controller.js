@@ -46,8 +46,9 @@ const createOrder = async (req, res, next) => {
           .findById(productOrder.option_id)
           .populate("product_id");
 
-        const productPrice = option.price || 0;
-        orderData.total_price += productPrice * productOrder.quantity;
+        const productPrice = parseFloat(option.price) || 0;
+        orderData.total_price +=
+          parseFloat(productPrice) * parseInt(productOrder.quantity);
       }
 
       const newOrder = new orderModel.order({
@@ -71,9 +72,16 @@ const createOrder = async (req, res, next) => {
 const getOrdersByUserId = async (req, res, next) => {
   try {
     const userId = req.user._id;
+    const { status } = req.query;
+
+    const queryCondition = { user_id: userId };
+    if (status) {
+      queryCondition.status = status;
+    }
 
     const orders = await orderModel.order
-      .find({ user_id: userId })
+      .find(queryCondition)
+      .sort({ updatedAt: -1 })
       .populate(["user_id", "info_id"]);
 
     const result = await Promise.all(
@@ -166,6 +174,7 @@ const ordersForStore = async (req, res, next) => {
       for (const option of options) {
         const optionOrders = await orderModel.order
           .find({ "productsOrder.option_id": option._id })
+          .sort({ updatedAt: -1 })
           .populate(["user_id", "info_id"])
           .lean();
 
