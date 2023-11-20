@@ -17,7 +17,7 @@ router.get(
   controller.detailOrders
 );
 router.get(
-  "/order-for-store/:store_id",
+  "/order-for-store",
   middleware.checkToken,
   middleware.checkStoreExits,
   controller.ordersForStore
