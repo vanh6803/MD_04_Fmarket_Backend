@@ -24,20 +24,42 @@ router.post(
   ]),
   controller.createStore
 );
-router.put("/update/:storeId", controller.editStore);
 router.put(
-  "/edit-avatar/:storeId",
+  "/update/:storeId",
+  middlware.checkToken,
+  middlware.checkStoreExits,
+  controller.editStore
+);
+router.put(
+  "/edit-avatar/",
+  middlware.checkToken,
+  middlware.checkStoreExits,
   upload.single("avatar"),
   controller.uploadAvatar
 );
 router.put(
-  "/edit-banner/:storeId",
+  "/edit-banner/",
+  middlware.checkToken,
+  middlware.checkStoreExits,
   upload.single("banner"),
   controller.uploadBanner
 );
-router.get("/info/:storeId", middlware.checkToken, controller.detailStore);
-router.get("/check-exiting", middlware.checkToken, controller.checkExitingStore);
-router.get("/get-store-id/:accountId", middlware.checkToken, controller.getStoreIdByAccountId);
+router.get(
+  "/info/",
+  middlware.checkToken,
+  middlware.checkStoreExits,
+  controller.detailStore
+);
+router.get(
+  "/check-exiting",
+  middlware.checkToken,
+  controller.checkExitingStore
+);
+// router.get(
+//   "/get-store-id/:accountId",
+//   middlware.checkToken,
+//   controller.getStoreIdByAccountId
+// );
 // router.delete("/delete/:storeId", middlware.checkToken, controller.deleteStore);
 
 module.exports = router;
