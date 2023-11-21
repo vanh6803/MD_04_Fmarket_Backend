@@ -44,7 +44,7 @@ const createStore = async (req, res, next) => {
 
 const editStore = async (req, res, next) => {
   try {
-    const storeId = req.params.storeId;
+    const storeId = req.store._id;
     const store = await storeModel.store.findById(storeId);
     if (!store) {
       return res
@@ -72,8 +72,10 @@ const editStore = async (req, res, next) => {
 
 const detailStore = async (req, res, next) => {
   try {
-    const storeId = req.params.storeId;
-    const store = await storeModel.store.findById(storeId).populate("user_id");
+    const storeId = req.store._id;
+    const store = await storeModel.store
+      .findById(storeId)
+      .populate("account_id");
     if (!store) {
       return res
         .status(404)
@@ -89,7 +91,7 @@ const detailStore = async (req, res, next) => {
 
 const uploadBanner = async (req, res, next) => {
   try {
-    const storeId = req.params.storeId;
+    const storeId = req.store._id;
     var banner;
     if (req.file) {
       banner = req.file.path;
@@ -113,7 +115,7 @@ const uploadBanner = async (req, res, next) => {
 
 const uploadAvatar = async (req, res, next) => {
   try {
-    const storeId = req.params.storeId;
+    const storeId = req.store._id;
     var avatar;
     if (req.file) {
       avatar = req.file.path;
@@ -137,7 +139,7 @@ const uploadAvatar = async (req, res, next) => {
 
 const deleteStore = async (req, res, next) => {
   try {
-    const storeId = req.params.storeId;
+    const storeId = req.store._id;
     const store = await storeModel.store.findById(storeId);
     if (!store) {
       return res
@@ -188,13 +190,15 @@ const getStoreIdByAccountId = async (req, res, next) => {
         .status(404)
         .json({ code: 404, message: "không tìm thấy cửa hàng" });
     }
-    return res
-      .status(200)
-      .json({ code: 200, data: store._id, message: "get id store successfully" });
+    return res.status(200).json({
+      code: 200,
+      data: store._id,
+      message: "get id store successfully",
+    });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
-}
+};
 
 module.exports = {
   createStore,
@@ -204,5 +208,5 @@ module.exports = {
   uploadBanner,
   uploadAvatar,
   checkExitingStore,
-  getStoreIdByAccountId
+  getStoreIdByAccountId,
 };

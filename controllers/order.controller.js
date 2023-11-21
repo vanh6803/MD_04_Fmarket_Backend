@@ -134,7 +134,9 @@ const updateOrderStatus = async (req, res, next) => {
       { new: true }
     );
 
-    return res.status(200).json(updatedOrder);
+    return res
+      .status(200)
+      .json({ code: 200, message: "update stutus order successfully" });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
