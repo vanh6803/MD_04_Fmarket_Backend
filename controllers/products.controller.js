@@ -29,14 +29,16 @@ const addProduct = async (req, res, next) => {
     if (!dataBody.status) {
       return res.status(404).json({ code: 404, message: "status is required" });
     }
-    const product = new productModel.product({ ...req.body, store_id });
+    const product = new productModel.product({ ...dataBody, store_id });
     await product.save();
     console.log(product);
     category.product.push(product._id);
     await category.save();
-    return res
-      .status(201)
-      .json({ code: 201, message: "created product successfully" });
+    return res.status(201).json({
+      code: 201,
+      result: product,
+      message: "created product successfully",
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ code: 500, message: error.message });
@@ -82,7 +84,11 @@ const addOption = async (req, res, next) => {
     product.option.push(option._id);
     await product.save();
     console.log(option);
-    res.status(201).json({ code: 201, message: "created option successfully" });
+    res.status(201).json({
+      code: 201,
+      result: option,
+      message: "created option successfully",
+    });
   } catch (error) {
     console.error(error.message);
     return res.status(500).json({ code: 500, message: error.message });
@@ -200,9 +206,10 @@ const getAllProducts = async (req, res, next) => {
     const skip = (page - 1) * itemsPerPage;
     const totalProducts = await productModel.product.countDocuments();
     const totalPages = Math.ceil(totalProducts / itemsPerPage);
+    const category = req.query.category;
 
     const products = await productModel.product
-      .find()
+      .find(category && { category_id: category })
       .skip(skip)
       .limit(itemsPerPage);
 
@@ -385,21 +392,21 @@ const getImageHotOption = async (product_id) => {
   }
 };
 
-const deleteOption = async (req, res, next) =>{
+const deleteOption = async (req, res, next) => {
   try {
-    const {optionId} = req.params
+    const { optionId } = req.params;
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
-}
+};
 
-const deleteProduct = async (req, res, next) =>{
+const deleteProduct = async (req, res, next) => {
   try {
-    const {productId} = req.params
+    const { productId } = req.params;
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
-}
+};
 
 module.exports = {
   addOption,

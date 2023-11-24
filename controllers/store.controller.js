@@ -81,6 +81,9 @@ const detailStore = async (req, res, next) => {
         .status(404)
         .json({ code: 404, message: "không tìm thấy cửa hàng" });
     }
+    const result = {
+      
+    }
     return res
       .status(200)
       .json({ code: 200, data: store, message: "get store successfully" });
