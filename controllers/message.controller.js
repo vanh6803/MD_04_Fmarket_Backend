@@ -17,22 +17,24 @@ const dataProcessing = async (msg) => {
 //Get the list of people you've texted 
 const getPeopleMessageList = async (req, res, next) => {
     try {
-        const {senderId} = req.params; //senderID = userId
-        //continue
-        const receiver_id = await messageModel.message.distinct('receiver_id', {sender_id: senderId});
-        
-        if(!receiver_id){
+        const { senderId } = req.params; // senderID = userId
+        const receiverIds = await messageModel.message.distinct('receiver_id', { sender_id: senderId });
+
+        if (!receiverIds || receiverIds.length === 0) {
             return res.status(404).json({
                 code: 404,
                 message: "You haven't texted anyone yet",
-              });
+            });
         }
+
+        // Use find to get accounts based on the array of receiver IDs
+        const accounts = await accountModel.account.find({ _id: { $in: receiverIds } });
 
         return res.status(200).json({
             code: 200,
-            result: receiver_id,
-            message: "get people list message successfully",
-          });
+            result: accounts,
+            message: "Get people list message successfully",
+        });
     } catch (error) {
         return res.status(500).json({ code: 500, message: error.message });
     }
