@@ -94,6 +94,7 @@ io.on('connection', (socket) => {
    
   socket.on('data', (msg) => {
     console.log(`new_message`);
+    console.log(msg);
     messageCtrl.dataProcessing(msg);
     io.emit('new_message',msg);
   });
