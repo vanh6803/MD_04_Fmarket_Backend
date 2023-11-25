@@ -44,9 +44,15 @@ const getMessageList  = async (req, res, next) => {
     try {   
         const {senderId, receiverId} = req.query; //senderID = userId
 
-        const messages = await messageModel.message.find({ sender_id: senderId, receiver_id: receiverId })
+        const messages = await messageModel.message.find({
+            $or: [
+                { sender_id: senderId },
+                { receiver_id: receiverId }
+            ]
+        })
+        .sort({ createdAt: 1 });
 
-        if(!messages){
+        if(!messages || messages.length === 0){
             return res.status(404).json({
                 code: 404,
                 message: "You haven't texted",
