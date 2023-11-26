@@ -17,18 +17,23 @@ const dataProcessing = async (msg) => {
 //Get the list of people you've texted 
 const getPeopleMessageList = async (req, res, next) => {
     try {
-        const { senderId } = req.params; // senderID = userId
-        const receiverIds = await messageModel.message.distinct('receiver_id', { sender_id: senderId });
+        const { userId } = req.params; // userId của người dùng hiện tại
 
-        if (!receiverIds || receiverIds.length === 0) {
-            return res.status(404).json({
-                code: 404,
-                message: "You haven't texted anyone yet",
-            });
-        }
+        // Tìm tất cả tin nhắn mà người dùng hiện tại là người gửi hoặc người nhận
+        const messages = await messageModel.message.find({
+            $or: [{ sender_id: userId }, { receiver_id: userId }]
+        });
 
-        // Use find to get accounts based on the array of receiver IDs
-        const accounts = await accountModel.account.find({ _id: { $in: receiverIds } });
+        // Lấy danh sách người đã nhắn tin với người dùng hiện tại
+        const peopleList = messages.map(message => {
+            return message.sender_id.toString() === userId
+                ? message.receiver_id
+                : message.sender_id;
+        });
+
+        // Lọc bỏ các id trùng lặp và tìm thông tin tài khoản tương ứng
+        const uniquePeopleList = Array.from(new Set(peopleList));
+        const accounts = await accountModel.account.find({ _id: { $in: uniquePeopleList, $ne: userId } });
 
         return res.status(200).json({
             code: 200,
@@ -40,14 +45,15 @@ const getPeopleMessageList = async (req, res, next) => {
     }
 }
 
+
 const getMessageList  = async (req, res, next) => {
     try {   
-        const {senderId, receiverId} = req.query; //senderID = userId
+        const {userId1, userId2} = req.query; //senderID = userId
 
         const messages = await messageModel.message.find({
             $or: [
-                { sender_id: senderId },
-                { receiver_id: receiverId }
+                { sender_id: userId1, receiver_id: userId2 },
+                { sender_id: userId2, receiver_id: userId1 }
             ]
         })
         .sort({ createdAt: 1 });
