@@ -207,14 +207,25 @@ const getAllProducts = async (req, res, next) => {
     const totalProducts = await productModel.product.countDocuments();
     const totalPages = Math.ceil(totalProducts / itemsPerPage);
     const category = req.query.category;
+    const store = req.query.store;
 
-    const products = await productModel.product
-      .find(category && { category_id: category })
+    let query = productModel.product.find();
+
+    if (category) {
+      query = query.where("category_id").equals(category);
+    }
+
+    if (store) {
+      query = query.where("store_id").equals(store);
+    }
+
+    const products = await query
       .skip(skip)
-      .limit(itemsPerPage);
+      .limit(itemsPerPage)
+      .populate(["store_id", "category_id"]);
 
     const result = products.map(async (product) => {
-      const { _id, name, discounted } = product;
+      const { _id, name, discounted, store_id, category_id } = product;
 
       // Lấy giá lớn nhất và giá nhỏ nhất của sản phẩm
       const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
@@ -226,6 +237,8 @@ const getAllProducts = async (req, res, next) => {
       return {
         _id,
         name,
+        store_id,
+        category_id,
         discounted,
         image: image,
         minPrice,

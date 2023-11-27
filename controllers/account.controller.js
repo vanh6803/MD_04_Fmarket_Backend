@@ -23,8 +23,12 @@ const editProfile = async (req, res, next) => {
       return res.status(404).json({ code: 404, message: "User not found" });
     }
     const dataUpdate = req.body;
-    await model.account.findByIdAndUpdate(uid, dataUpdate, { new: true });
-    return res.status(200).json({ code: 200, message: "update successful" });
+    const data = await model.account.findByIdAndUpdate(uid, dataUpdate, {
+      new: true,
+    });
+    return res
+      .status(200)
+      .json({ code: 200, data: data, message: "update successful" });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
@@ -40,14 +44,14 @@ const uploadAvatar = async (req, res, next) => {
     if (req.file) {
       image = req.file.path;
     }
-    await model.account.findByIdAndUpdate(
+    const data = await model.account.findByIdAndUpdate(
       uid,
       { avatar: image },
       { new: true }
     );
     return res
       .status(200)
-      .json({ code: 200, message: "upload avatar successful" });
+      .json({ code: 200, data: data, message: "upload avatar successful" });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
