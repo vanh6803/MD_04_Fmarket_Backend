@@ -32,6 +32,7 @@ router.put(
   middleware.checkStoreExits,
   controller.updateProduct
 );
+
 //option
 router.post(
   "/create-option",
@@ -47,6 +48,5 @@ router.put(
   upload.single("image"),
   controller.updateOption
 );
-
 
 module.exports = router;
