@@ -276,7 +276,7 @@ const getProductsByStore = async (req, res, next) => {
       .limit(itemsPerPage);
 
     const result = products.map(async (product) => {
-      const { _id, name, discounted } = product;
+      const { _id, name, discounted, store_id, category_id } = product;
 
       // Lấy giá lớn nhất và giá nhỏ nhất của sản phẩm
       const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
@@ -288,6 +288,8 @@ const getProductsByStore = async (req, res, next) => {
       return {
         _id,
         name,
+        store_id,
+        category_id,
         discounted,
         image: image,
         minPrice,
