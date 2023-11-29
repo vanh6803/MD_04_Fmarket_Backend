@@ -9,6 +9,7 @@ var debug = require("debug")("md-04-fmarket-backend:server");
 var http = require("http");
 var socketIo = require('socket.io');
 const messageCtrl = require('../controllers/message.controller');
+const commentCtrl = require('../controllers/comment.controller');
 
 /**
  * Get port from environment and store in Express.
@@ -97,6 +98,13 @@ io.on('connection', (socket) => {
     console.log(msg);
     messageCtrl.dataProcessing(msg);
     io.emit('new_message',msg);
+  });
+
+  socket.on('new_comment', (cmt) => {
+    console.log(`new_message`);
+    console.log(cmt);
+    commentCtrl.dataProcessing(cmt);
+    io.emit('new_comment',cmt);
   });
 
   socket.on('disconnect', () => {
