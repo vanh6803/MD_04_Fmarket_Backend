@@ -24,11 +24,19 @@ const getPeopleMessageList = async (req, res, next) => {
             $or: [{ sender_id: userId }, { receiver_id: userId }]
         });
 
+        if(!messages){
+            return res.status(404).json({ code: 404, message: "No message!" });
+        }
+
         const peopleList = messages.map(message => (
             message.sender_id.toString() === userId
                 ? message.receiver_id
                 : message.sender_id
         ));
+
+        if(!peopleList){
+            return res.status(404).json({ code: 404, message: "No people list!" });
+        }
 
         const uniquePeopleSet = new Set(peopleList);
         const uniquePeopleList = Array.from(uniquePeopleSet);
@@ -46,6 +54,10 @@ const getPeopleMessageList = async (req, res, next) => {
             }
             return null;
         }));
+
+        if(!result){
+            return res.status(404).json({ code: 404, message: "can not show result!" });
+        }
 
         const uniqueResult = removeDuplicateStores(result, 'account._id', userId);
 
