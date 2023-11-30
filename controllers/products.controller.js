@@ -99,16 +99,36 @@ const updateOption = async (req, res, next) => {
   try {
     const { optionId } = req.params;
     const dataBody = req.body;
-    console.log("file: ", req.file);
-    if (req.file) {
-      dataBody.image = req.file.path;
-    }
+
     await optionModel.option
       .findByIdAndUpdate(optionId, dataBody)
       .then(() => {
         return res
           .status(200)
           .json({ code: 200, message: "option updated successfully" });
+      })
+      .catch(() => {
+        return res.status(404).json({ code: 404, message: "option not found" });
+      });
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
+const updateImageOption = async (req, res, next) => {
+  try {
+    const { optionId } = req.params;
+    console.log("file: ", req.file);
+    let image;
+    if (req.file) {
+      image = req.file.path;
+    }
+    await optionModel.option
+      .findByIdAndUpdate(optionId, { image: image }, { new: true })
+      .then(() => {
+        return res
+          .status(200)
+          .json({ code: 200, message: "option image updated successfully" });
       })
       .catch(() => {
         return res.status(404).json({ code: 404, message: "option not found" });
@@ -433,4 +453,5 @@ module.exports = {
   updateOption,
   getProductsByStore,
   getSimilarProducts,
+  updateImageOption
 };
