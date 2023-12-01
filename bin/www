@@ -100,13 +100,6 @@ io.on('connection', (socket) => {
     io.emit('new_message',msg);
   });
 
-  socket.on('new_comment', (cmt) => {
-    console.log(`new_message`);
-    console.log(cmt);
-    commentCtrl.dataProcessing(cmt);
-    io.emit('new_comment',cmt);
-  });
-
   socket.on('disconnect', () => {
     console.log('User disconnected');
   });
