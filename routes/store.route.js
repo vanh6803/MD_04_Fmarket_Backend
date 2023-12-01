@@ -17,7 +17,7 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage });
 
 router.post(
-  "/create/:uid",
+  "/create",
   middlware.checkToken,
   upload.fields([
     { name: "avatar", maxCount: 1 },

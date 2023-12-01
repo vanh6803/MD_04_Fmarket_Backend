@@ -3,7 +3,7 @@ const accountModel = require("../models/Account");
 
 const createStore = async (req, res, next) => {
   try {
-    const uid = req.params.uid;
+    const uid = req.user._id;
     const user = await accountModel.account.findById(uid);
     if (!user) {
       return res
@@ -204,13 +204,11 @@ const getStoreIdByAccountId = async (req, res, next) => {
 const getAllStore = async (req, res) => {
   try {
     const stores = await storeModel.store.find().populate("account_id");
-    return res
-      .status(200)
-      .json({
-        code: 200,
-        data: stores,
-        message: "get all stores successfully",
-      });
+    return res.status(200).json({
+      code: 200,
+      data: stores,
+      message: "get all stores successfully",
+    });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
@@ -225,5 +223,5 @@ module.exports = {
   uploadAvatar,
   checkExitingStore,
   getStoreIdByAccountId,
-  getAllStore
+  getAllStore,
 };
