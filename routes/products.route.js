@@ -45,8 +45,15 @@ router.put(
   "/update-option/:optionId",
   middleware.checkToken,
   middleware.checkStoreExits,
-  upload.single("image"),
   controller.updateOption
+);
+
+router.put(
+  "/update-option-image/:optionId",
+  middleware.checkToken,
+  middleware.checkStoreExits,
+  upload.single("image"),
+  controller.updateImageOption
 );
 
 module.exports = router;

@@ -29,14 +29,16 @@ const addProduct = async (req, res, next) => {
     if (!dataBody.status) {
       return res.status(404).json({ code: 404, message: "status is required" });
     }
-    const product = new productModel.product({ ...req.body, store_id });
+    const product = new productModel.product({ ...dataBody, store_id });
     await product.save();
     console.log(product);
     category.product.push(product._id);
     await category.save();
-    return res
-      .status(201)
-      .json({ code: 201, message: "created product successfully" });
+    return res.status(201).json({
+      code: 201,
+      result: product,
+      message: "created product successfully",
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ code: 500, message: error.message });
@@ -82,7 +84,11 @@ const addOption = async (req, res, next) => {
     product.option.push(option._id);
     await product.save();
     console.log(option);
-    res.status(201).json({ code: 201, message: "created option successfully" });
+    res.status(201).json({
+      code: 201,
+      result: option,
+      message: "created option successfully",
+    });
   } catch (error) {
     console.error(error.message);
     return res.status(500).json({ code: 500, message: error.message });
@@ -93,16 +99,36 @@ const updateOption = async (req, res, next) => {
   try {
     const { optionId } = req.params;
     const dataBody = req.body;
-    console.log("file: ", req.file);
-    if (req.file) {
-      dataBody.image = req.file.path;
-    }
+
     await optionModel.option
       .findByIdAndUpdate(optionId, dataBody)
       .then(() => {
         return res
           .status(200)
           .json({ code: 200, message: "option updated successfully" });
+      })
+      .catch(() => {
+        return res.status(404).json({ code: 404, message: "option not found" });
+      });
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
+const updateImageOption = async (req, res, next) => {
+  try {
+    const { optionId } = req.params;
+    console.log("file: ", req.file);
+    let image;
+    if (req.file) {
+      image = req.file.path;
+    }
+    await optionModel.option
+      .findByIdAndUpdate(optionId, { image: image }, { new: true })
+      .then(() => {
+        return res
+          .status(200)
+          .json({ code: 200, message: "option image updated successfully" });
       })
       .catch(() => {
         return res.status(404).json({ code: 404, message: "option not found" });
@@ -200,14 +226,26 @@ const getAllProducts = async (req, res, next) => {
     const skip = (page - 1) * itemsPerPage;
     const totalProducts = await productModel.product.countDocuments();
     const totalPages = Math.ceil(totalProducts / itemsPerPage);
+    const category = req.query.category;
+    const store = req.query.store;
 
-    const products = await productModel.product
-      .find()
+    let query = productModel.product.find();
+
+    if (category) {
+      query = query.where("category_id").equals(category);
+    }
+
+    if (store) {
+      query = query.where("store_id").equals(store);
+    }
+
+    const products = await query
       .skip(skip)
-      .limit(itemsPerPage);
+      .limit(itemsPerPage)
+      .populate(["store_id", "category_id"]);
 
     const result = products.map(async (product) => {
-      const { _id, name, discounted } = product;
+      const { _id, name, discounted, store_id, category_id } = product;
 
       // Lấy giá lớn nhất và giá nhỏ nhất của sản phẩm
       const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
@@ -219,6 +257,8 @@ const getAllProducts = async (req, res, next) => {
       return {
         _id,
         name,
+        store_id,
+        category_id,
         discounted,
         image: image,
         minPrice,
@@ -256,7 +296,7 @@ const getProductsByStore = async (req, res, next) => {
       .limit(itemsPerPage);
 
     const result = products.map(async (product) => {
-      const { _id, name, discounted } = product;
+      const { _id, name, discounted, store_id, category_id } = product;
 
       // Lấy giá lớn nhất và giá nhỏ nhất của sản phẩm
       const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
@@ -268,6 +308,8 @@ const getProductsByStore = async (req, res, next) => {
       return {
         _id,
         name,
+        store_id,
+        category_id,
         discounted,
         image: image,
         minPrice,
@@ -385,21 +427,21 @@ const getImageHotOption = async (product_id) => {
   }
 };
 
-const deleteOption = async (req, res, next) =>{
+const deleteOption = async (req, res, next) => {
   try {
-    const {optionId} = req.params
+    const { optionId } = req.params;
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
-}
+};
 
-const deleteProduct = async (req, res, next) =>{
+const deleteProduct = async (req, res, next) => {
   try {
-    const {productId} = req.params
+    const { productId } = req.params;
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
-}
+};
 
 module.exports = {
   addOption,
@@ -411,4 +453,5 @@ module.exports = {
   updateOption,
   getProductsByStore,
   getSimilarProducts,
+  updateImageOption
 };

@@ -55,6 +55,12 @@ router.get(
   middlware.checkToken,
   controller.checkExitingStore
 );
+
+router.get(
+  "/all-store",
+  middlware.checkToken,
+  controller.getAllStore
+);
 // router.get(
 //   "/get-store-id/:accountId",
 //   middlware.checkToken,
