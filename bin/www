@@ -9,8 +9,6 @@ var debug = require("debug")("md-04-fmarket-backend:server");
 var http = require("http");
 var socketIo = require('socket.io');
 const messageCtrl = require('../controllers/message.controller');
-const commentCtrl = require('../controllers/comment.controller');
-
 /**
  * Get port from environment and store in Express.
  */
