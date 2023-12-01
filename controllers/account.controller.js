@@ -179,6 +179,34 @@ const createAccountStaff = async (req, res, next) => {
   }
 };
 
+const changeActiveStaff = async (req, res) => {
+  try {
+    const user = req.user;
+    if (user.role_id != "admin") {
+      return res.status(403).json({
+        code: 403,
+        message: "You do not have permission to use this function",
+      });
+    }
+    const { staffId } = req.params;
+    const staff = await model.account.findById(staffId);
+    if (!staff) {
+      return res.status(404).json({ code: 404, message: "not found" });
+    }
+
+    if (staff.role_id != "staff") {
+      return res
+        .status(409)
+        .json({ code: 409, message: "account don't staff" });
+    }
+
+    await model.account.findByIdAndDelete(staffId);
+    return res.status(204).json({ code: 204, message: "account deleted" });
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
 module.exports = {
   detailProfile,
   resetPassword,
@@ -187,4 +215,5 @@ module.exports = {
   allUser,
   createAccountStaff,
   changeActiveUser,
+  changeActiveStaff,
 };
