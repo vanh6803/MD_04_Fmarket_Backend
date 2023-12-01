@@ -33,6 +33,12 @@ router.put(
   controller.updateProduct
 );
 
+router.put(
+  "/change-active-product/:productId",
+  // middleware.checkToken,
+  controller.changeActiveProduct
+);
+
 //option
 router.post(
   "/create-option",

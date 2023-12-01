@@ -443,6 +443,27 @@ const deleteProduct = async (req, res, next) => {
   }
 };
 
+const changeActiveProduct = async (req, res, next) => {
+  try {
+    const { productId } = req.params;
+    const product = await productModel.product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ code: 404, message: "Product not found" });
+    }
+    let active = !product.is_active;
+    await productModel.product.findByIdAndUpdate(
+      productId,
+      { is_active: active },
+      { new: true }
+    );
+    return res
+      .status(200)
+      .json({ code: 200, message: "change active product successfully" });
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
 module.exports = {
   addOption,
   addProduct,
@@ -453,5 +474,6 @@ module.exports = {
   updateOption,
   getProductsByStore,
   getSimilarProducts,
-  updateImageOption
+  updateImageOption,
+  changeActiveProduct,
 };
