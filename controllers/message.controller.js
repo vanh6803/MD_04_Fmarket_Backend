@@ -24,18 +24,20 @@ const getPeopleMessageList = async (req, res, next) => {
             $or: [{ sender_id: userId }, { receiver_id: userId }]
         });
 
-        if(!messages){
-            return res.status(404).json({ code: 404, message: "No message!" });
+        if (!messages || messages.length === 0) {
+            return res.status(404).json({ code: 404, message: "Không tìm thấy tin nhắn nào!" });
         }
 
         const peopleList = messages.map(message => (
             message.sender_id.toString() === userId
-                ? message.receiver_id
-                : message.sender_id
+                ? message.receiver_id.toString()
+                : message.sender_id.toString()
         ));
 
-        if(!peopleList){
-            return res.status(404).json({ code: 404, message: "No people list!" });
+        console.log('peopleList:', peopleList);
+
+        if (!peopleList || peopleList.length === 0) {
+            return res.status(404).json({ code: 404, message: "Không tìm thấy danh sách người dùng!" });
         }
 
         const uniquePeopleSet = new Set(peopleList);
@@ -43,33 +45,37 @@ const getPeopleMessageList = async (req, res, next) => {
 
         const result = await Promise.all(uniquePeopleList.map(async (accountId) => {
             const store = await storeModel.store.findOne({ account_id: accountId });
-            if (store) {
-                const account = await accountModel.account.findOne({ _id: accountId });
-                const { latestMessage } = await latestMessageFun(userId, accountId);
-                return {
-                    store,
-                    account,
-                    latestMessage
-                };
-            }
-            return null;
+            console.log('store:', store);
+            
+            const account = await accountModel.account.findOne({ _id: accountId });
+            const { latestMessage } = await latestMessageFun(userId, accountId);
+            console.log('latestMessage:', latestMessage);
+        
+            return {
+                store: store || {}, // Trả về đối tượng rỗng nếu store không tồn tại
+                account,
+                latestMessage
+            };
         }));
 
-        if(!result){
-            return res.status(404).json({ code: 404, message: "can not show result!" });
+        if (!result || result.length === 0) {
+            return res.status(404).json({ code: 404, message: "Không tìm thấy kết quả!" });
         }
 
-        const uniqueResult = removeDuplicateStores(result, 'account._id', userId);
+        // const uniqueResult = removeDuplicateStores(result, 'account._id', userId);
+        // console.log(uniqueResult);
 
         return res.status(200).json({
             code: 200,
-            result: uniqueResult,
-            message: "Get people list message successfully",
+            result: result,
+            message: "Lấy danh sách người dùng và tin nhắn thành công",
         });
     } catch (error) {
+        console.error(error);
         return res.status(500).json({ code: 500, message: error.message });
     }
-}
+};
+
 
 const latestMessageFun = async (userId, accountId) => {
     const latestMessage = await messageModel.message.findOne({
@@ -79,20 +85,19 @@ const latestMessageFun = async (userId, accountId) => {
         ]
     }).sort({ createdAt: -1 }).limit(1);
     
-    return {latestMessage};
-}
+    return { latestMessage };
+};
 
-function removeDuplicateStores(stores, key, userId) {
-    const uniqueStoresMap = new Map();
-    for (const store of stores) {
-        const storeKey = store[key];
-        if (storeKey !== userId && !uniqueStoresMap.has(storeKey)) {
-            uniqueStoresMap.set(storeKey, store);
-        }
-    }
-    return Array.from(uniqueStoresMap.values());
-}
-
+// function removeDuplicateStores(stores, key, userId) {
+//     const uniqueStoresMap = new Map();
+//     for (const store of stores) {
+//         const storeKey = store[key]?.toString();
+//         if (storeKey && storeKey !== userId && !uniqueStoresMap.has(storeKey)) {
+//             uniqueStoresMap.set(storeKey, store);
+//         }
+//     }
+//     return Array.from(uniqueStoresMap.values());
+// }
 
 const getMessageList  = async (req, res, next) => {
     try {   
