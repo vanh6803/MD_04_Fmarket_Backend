@@ -83,6 +83,11 @@ const addOption = async (req, res, next) => {
     await option.save();
     product.option.push(option._id);
     await product.save();
+    if (dataBody.discount_value > 0) {
+      await productModel.product.findByIdAndUpdate(product._id, {
+        discounted: true,
+      });
+    }
     console.log(option);
     res.status(201).json({
       code: 201,
@@ -100,16 +105,34 @@ const updateOption = async (req, res, next) => {
     const { optionId } = req.params;
     const dataBody = req.body;
 
-    await optionModel.option
-      .findByIdAndUpdate(optionId, dataBody)
-      .then(() => {
-        return res
-          .status(200)
-          .json({ code: 200, message: "option updated successfully" });
-      })
-      .catch(() => {
-        return res.status(404).json({ code: 404, message: "option not found" });
+    const option = await optionModel.option.findById(optionId);
+
+    if (!option) {
+      return res.status(404).json({ code: 404, message: "option not found" });
+    }
+
+    await optionModel.option.findByIdAndUpdate(optionId, dataBody);
+
+    const hasDiscountValueOption = await optionModel.option.exists({
+      product_id: option.product_id,
+      discount_value: { $gt: 0 },
+    });
+
+    console.log(hasDiscountValueOption);
+
+    if (!hasDiscountValueOption) {
+      await productModel.product.findByIdAndUpdate(option.product_id, {
+        discounted: false,
       });
+    } else {
+      await productModel.product.findByIdAndUpdate(option.product_id, {
+        discounted: true,
+      });
+    }
+
+    return res
+      .status(200)
+      .json({ code: 200, message: "option updated successfully" });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
@@ -168,7 +191,10 @@ const detailProduct = async (req, res, next) => {
 const getProductsByCategory = async (req, res, next) => {
   try {
     const itemsPerPage = parseInt(req.query.itemsPerPage) || 1000000;
-    const categories = await categoryModel.category.find();
+    const queryCategory = req.query.category;
+    const categories = await categoryModel.category.find(
+      queryCategory ? { _id: queryCategory } : null
+    );
 
     // format data returned
     const result = categories.map(async (category) => {
@@ -228,6 +254,7 @@ const getAllProducts = async (req, res, next) => {
     const totalPages = Math.ceil(totalProducts / itemsPerPage);
     const category = req.query.category;
     const store = req.query.store;
+    const discounted = req.query.discounted === "true";
 
     let query = productModel.product.find();
 
@@ -237,6 +264,10 @@ const getAllProducts = async (req, res, next) => {
 
     if (store) {
       query = query.where("store_id").equals(store);
+    }
+
+    if (discounted) {
+      query = query.where("discounted").equals(true);
     }
 
     const products = await query
