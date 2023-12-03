@@ -1,6 +1,6 @@
+const { cloudinary } = require("../config/SetupCloudinary");
 const model = require("../models/Account");
 const bcrypt = require("bcrypt");
-
 const detailProfile = async (req, res, next) => {
   try {
     const uid = req.params.uid;
@@ -40,10 +40,20 @@ const uploadAvatar = async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ code: 404, message: "User not found" });
     }
-    let image;
-    if (req.file) {
-      image = req.file.path;
+
+    console.log(req.file);
+    if (!req.file) {
+      return res.status(404).json({ code: 404, message: "file not found" });
     }
+
+    if (user.avatar) {
+      const public_id = user.avatar.split(
+        "https://res.cloudinary.com/dwxavjnvc/image/upload/"
+      );
+      await cloudinary.uploader.destroy(public_id);
+    }
+
+    let image = req.file.path;
     const data = await model.account.findByIdAndUpdate(
       uid,
       { avatar: image },
