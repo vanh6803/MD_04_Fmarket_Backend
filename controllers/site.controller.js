@@ -111,6 +111,7 @@ const register = async (req, res, next) => {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
+
 const login = async (req, res, next) => {
   try {
     const userAgent = req.headers["user-agent"];
@@ -180,6 +181,7 @@ const login = async (req, res, next) => {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
+
 const logout = async (req, res, next) => {
   try {
     // find user
@@ -206,6 +208,7 @@ const logout = async (req, res, next) => {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
+
 const verifyEmail = async (req, res, next) => {
   try {
     const { code } = req.params;
@@ -238,6 +241,7 @@ const verifyEmail = async (req, res, next) => {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
+
 const resendConfirmationCode = async (req, res, next) => {
   try {
     const { email } = req.body;

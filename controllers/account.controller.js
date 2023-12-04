@@ -1,6 +1,7 @@
 const { cloudinary } = require("../config/SetupCloudinary");
 const model = require("../models/Account");
 const bcrypt = require("bcrypt");
+
 const detailProfile = async (req, res, next) => {
   try {
     const uid = req.params.uid;
@@ -15,6 +16,7 @@ const detailProfile = async (req, res, next) => {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
+
 const editProfile = async (req, res, next) => {
   try {
     const uid = req.params.uid;
@@ -33,6 +35,7 @@ const editProfile = async (req, res, next) => {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
+
 const uploadAvatar = async (req, res, next) => {
   try {
     const uid = req.params.uid;
@@ -66,6 +69,7 @@ const uploadAvatar = async (req, res, next) => {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
+
 const resetPassword = async (req, res, next) => {
   try {
     const uid = req.params.uid;
@@ -153,7 +157,11 @@ const changeActiveUser = async (req, res, next) => {
 
     const { uid } = req.params;
 
-    await model.account.findByIdAndUpdate(uid, { is_active: false });
+    const account = await model.account.findById(uid);
+
+    let active = !account.is_active;
+
+    await model.account.findByIdAndUpdate(uid, { is_active: active });
     return res
       .status(200)
       .json({ code: 200, message: "change active user successfully" });

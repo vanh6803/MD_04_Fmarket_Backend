@@ -35,7 +35,7 @@ router.put(
 
 router.put(
   "/change-active-product/:productId",
-  // middleware.checkToken,
+  middleware.checkToken,
   controller.changeActiveProduct
 );
 

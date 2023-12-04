@@ -27,15 +27,14 @@ const inserReview = async (cmt) => {
       const newReview = new model.productRate(cmt);
       await newReview.save();
 
-      console.log('Review inserted successfully!');
+      console.log("Review inserted successfully!");
     } else {
-      console.log('Invalid review data');
+      console.log("Invalid review data");
     }
   } catch (error) {
     console.error(error.message);
   }
 };
-
 
 const addReview = async (req, res, next) => {
   try {
@@ -74,6 +73,7 @@ const addReview = async (req, res, next) => {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
+
 const editReview = async (req, res, next) => {
   try {
     const idComment = req.params.idComment;
@@ -118,6 +118,7 @@ const editReview = async (req, res, next) => {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
+
 const deleteReview = async (req, res, next) => {
   try {
     const idComment = req.params.idComment;
@@ -143,5 +144,5 @@ module.exports = {
   addReview,
   editReview,
   deleteReview,
-  inserReview
+  inserReview,
 };
