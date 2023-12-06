@@ -3,6 +3,7 @@ const productModel = require("../models/Products");
 const optionModel = require("../models/Option");
 const storeModel = require("../models/Store");
 const productRateModel = require("../models/ProductRate");
+const orderModel = require('../models/Orders');
 
 const addProduct = async (req, res, next) => {
   try {
@@ -401,6 +402,36 @@ const deleteProduct = async (req, res, next) =>{
   }
 }
 
+const getTopProduct = async (req, res, next) => {
+  try {
+    const result = await orderModel.order.aggregate([
+      { $unwind: "$productsOrder" },
+      {
+        $group: {
+          _id: "$productsOrder.option_id",
+          totalQuantity: { $sum: "$productsOrder.quantity" },
+        },
+      },
+      { $sort: { totalQuantity: -1 } },
+      { $limit: 10 },
+    ]);
+
+    const topOptionIds = result.map(item => item._id);
+
+    const topProducts = await optionModel.option.find({ _id: { $in: topOptionIds } })
+      .populate('product_id')
+      .exec();
+
+    return res.status(200).json({
+      code: 200,
+      result: topProducts,
+      message: "get top products successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+}
+
 module.exports = {
   addOption,
   addProduct,
@@ -411,4 +442,5 @@ module.exports = {
   updateOption,
   getProductsByStore,
   getSimilarProducts,
+  getTopProduct,
 };
