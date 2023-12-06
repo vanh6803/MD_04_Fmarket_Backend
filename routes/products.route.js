@@ -34,6 +34,12 @@ router.put(
   controller.updateProduct
 );
 
+router.put(
+  "/change-active-product/:productId",
+  // middleware.checkToken,
+  controller.changeActiveProduct
+);
+
 //option
 router.post(
   "/create-option",
@@ -46,9 +52,15 @@ router.put(
   "/update-option/:optionId",
   middleware.checkToken,
   middleware.checkStoreExits,
-  upload.single("image"),
   controller.updateOption
 );
 
+router.put(
+  "/update-option-image/:optionId",
+  middleware.checkToken,
+  middleware.checkStoreExits,
+  upload.single("image"),
+  controller.updateImageOption
+);
 
 module.exports = router;

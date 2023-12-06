@@ -17,7 +17,8 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage });
 
 router.post(
-  "/create/:uid",
+  "/create",
+  middlware.checkToken,
   upload.fields([
     { name: "avatar", maxCount: 1 },
     { name: "banner", maxCount: 1 },
@@ -25,20 +26,20 @@ router.post(
   controller.createStore
 );
 router.put(
-  "/update/:storeId",
+  "/update",
   middlware.checkToken,
   middlware.checkStoreExits,
   controller.editStore
 );
 router.put(
-  "/edit-avatar/",
+  "/edit-avatar",
   middlware.checkToken,
   middlware.checkStoreExits,
   upload.single("avatar"),
   controller.uploadAvatar
 );
 router.put(
-  "/edit-banner/",
+  "/edit-banner",
   middlware.checkToken,
   middlware.checkStoreExits,
   upload.single("banner"),
@@ -54,6 +55,12 @@ router.get(
   "/check-exiting",
   middlware.checkToken,
   controller.checkExitingStore
+);
+
+router.get(
+  "/all-store",
+  middlware.checkToken,
+  controller.getAllStore
 );
 // router.get(
 //   "/get-store-id/:accountId",

@@ -7,10 +7,10 @@ const optionSchema = new db.mongoose.Schema(
     color_code: { type: String },
     image: { type: String },
     price: { type: Number },
-    discount_value: { type: Number }, 
+    discount_value: { type: Number, default: 0 },
     quantity: { type: Number }, // số lượng của sản phẩm
     soldQuantity: { type: Number, default: 0 }, // số lượng đã bán
-    hot_option: { type: Boolean, default: false },// option tốt nổi bật nhất
+    hot_option: { type: Boolean, default: false }, // option tốt nổi bật nhất
   },
   { timestamps: true }
 );
