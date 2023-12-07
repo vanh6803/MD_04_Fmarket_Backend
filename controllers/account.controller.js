@@ -104,7 +104,7 @@ const resetPassword = async (req, res, next) => {
 const allUser = async (req, res, next) => {
   try {
     const user = req.user;
-    if (user.role_id != "admin") {
+    if (user.role_id == "customer") {
       return res.status(403).json({
         code: 403,
         message: "You do not have permission to use this function",
