@@ -55,8 +55,16 @@ const allNotificationByUser = async (req, res, next) => {
     try {
         const {userId} = req.params;
         
-        const notifications = await notifiModel.notifi.find({receiver_id: userId});
-        
+        const notifications = await notifiModel.notifi.find({ receiver_id: userId })
+        .populate({
+            path: 'sender_id',
+            model: 'account'
+        })
+        .populate({
+            path: 'receiver_id',
+            model: 'account'
+        }).sort({ createdAt: -1 });
+
         if(!notifications || notifications.length === 0 ) {
             return res.status(404).json({ code: 404, message: "Không tìm thấy thông báo nào!" });
         }
