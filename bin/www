@@ -97,15 +97,17 @@ io.on('connection', (socket) => {
     console.log(`new_message`);
     console.log(msg);
     messageCtrl.dataProcessing(msg);
-    notifiCtrl.newNotifiMessage(msg);
+    const newNotifi = notifiCtrl.newNotifiMessage(msg);
     io.emit('new_message',msg);
+    io.emit('new_notification', newNotifi);
   });
 
   socket.on('new_cmt', (cmt) => {
     console.log(cmt);
     productRate.inserReview(cmt);
-    notifiCtrl.newNotifiComment(cmt);
+    const newNotifi = notifiCtrl.newNotifiMessage(msg);
     io.emit('new_cmt',cmt);
+    io.emit('new_notification', newNotifi);
   });
 
   socket.on('disconnect', () => {

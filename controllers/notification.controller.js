@@ -5,7 +5,7 @@ const newNotifiMessage = async (msg) => {
         if(msg){
             const {sender_id, receiver_id ,content} = msg;
 
-            let obj = new notifiModel.notifi({
+            const obj = new notifiModel.notifi({
                 sender_id: sender_id,
                 receiver_id: receiver_id,
                 content: content,
@@ -13,13 +13,10 @@ const newNotifiMessage = async (msg) => {
                 type: 'msg'
             });
 
-            await obj.save()
-                .then(saved => {
-                    console.log('document saved ',saved);
-                 })
-                 .catch(err => {
-                    console.log('error ', err);
-                 })
+            const savedNotification = await obj.save();
+            console.log('Document saved:', savedNotification);
+
+            return savedNotification;
         }
     } catch (error) {
         console.log('error ', error);
@@ -28,28 +25,27 @@ const newNotifiMessage = async (msg) => {
 
 const newNotifiComment = async (cmt) => {
     try {
-        if(cmt){
-            const {sender_id, receiver_id ,content} = cmt;
+        if (cmt) {
+            const { sender_id, receiver_id, content } = cmt;
 
-            let obj = new notifiModel.notifi({
+            const newNotification = new notifiModel.notifi({
                 sender_id: sender_id,
                 receiver_id: receiver_id,
                 content: content,
                 type: 'cmt'
             });
 
-            await obj.save()
-                .then(saved => {
-                    console.log('document saved ',saved);
-                 })
-                 .catch(err => {
-                    console.log('error ', err);
-                 })
+            const savedNotification = await newNotification.save();
+            console.log('Document saved:', savedNotification);
+
+            return savedNotification; 
         }
     } catch (error) {
-        console.log('error ', error);
+        console.log('Error:', error);
+        throw error; 
     }
 }
+
 
 const allNotificationByUser = async (req, res, next) => {
     try {
