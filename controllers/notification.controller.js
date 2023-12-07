@@ -46,7 +46,6 @@ const newNotifiComment = async (cmt) => {
     }
 }
 
-
 const allNotificationByUser = async (req, res, next) => {
     try {
         const {userId} = req.params;
