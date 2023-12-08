@@ -1,4 +1,7 @@
 const notifiModel = require('../models/Notification');
+const storeModel = require('../models/Store');
+const productModel = require('../models/Products');
+const accountModel = require('../models/Account');
 
 const newNotifiMessage = async (msg) => {
     try {
@@ -9,7 +12,6 @@ const newNotifiMessage = async (msg) => {
                 sender_id: sender_id,
                 receiver_id: receiver_id,
                 content: content,
-                status: 'unread',
                 type: 'msg'
             });
 
@@ -26,12 +28,29 @@ const newNotifiMessage = async (msg) => {
 const newNotifiComment = async (cmt) => {
     try {
         if (cmt) {
-            const { sender_id, receiver_id, content } = cmt;
+            const {product_id, user_id, content, rate} = cmt;
 
+            const product = await productModel.product.findById(product_id).populate({
+                path: 'store_id',
+                model: 'Store',
+                populate: {
+                  path: 'account_id',
+                  model: 'Account',
+                },
+            });
+
+            if (!product) {
+                console.log('Không tìm thấy sản phẩm');
+                return null;
+            }
+
+            const account_id = product.store_id.account_id._id;
+        
+            const notificationContent = content || `Sản phẩm ${product.name} được đánh giá ${rate} sao`;
             const newNotification = new notifiModel.notifi({
-                sender_id: sender_id,
-                receiver_id: receiver_id,
-                content: content,
+                sender_id: user_id,
+                receiver_id: account_id,
+                content: notificationContent,
                 type: 'cmt'
             });
 
