@@ -105,7 +105,7 @@ io.on('connection', (socket) => {
   socket.on('new_cmt', (cmt) => {
     console.log(cmt);
     productRate.inserReview(cmt);
-    const newNotifi = notifiCtrl.newNotifiMessage(msg);
+    const newNotifi = notifiCtrl.newNotifiComment(cmt);
     io.emit('new_cmt',cmt);
     io.emit('new_notification', newNotifi);
   });

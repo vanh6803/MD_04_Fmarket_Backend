@@ -1,6 +1,8 @@
 const model = require("../models/ProductRate");
 const productModel = require("../models/Products");
 const userModel = require("../models/Account");
+const orderModel = require("../models/Orders");
+const optionModel = require("../models/Option");
 
 const getAllReviews = async (req, res, next) => {
   try {
@@ -23,8 +25,14 @@ const getAllReviews = async (req, res, next) => {
 const inserReview = async (cmt) => {
   try {
     if (cmt) {
-      let { product_id, user_id, content, image, rate } = cmt;
-      const newReview = new model.productRate(cmt);
+      const { product_id, user_id, content, image, rate } = cmt;
+      const newReview = new model.productRate({
+        product_id: product_id || null,
+        user_id: user_id || null,
+        content: content || null,
+        image: image || null,
+        rate: rate || null,
+      });
       await newReview.save();
 
       console.log('Review inserted successfully!');
@@ -143,5 +151,5 @@ module.exports = {
   addReview,
   editReview,
   deleteReview,
-  inserReview
+  inserReview,
 };
