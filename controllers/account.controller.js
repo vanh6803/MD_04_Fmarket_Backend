@@ -1,3 +1,4 @@
+const { cloudinary } = require("../config/SetupCloudinary");
 const model = require("../models/Account");
 const bcrypt = require("bcrypt");
 
@@ -15,6 +16,7 @@ const detailProfile = async (req, res, next) => {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
+
 const editProfile = async (req, res, next) => {
   try {
     const uid = req.params.uid;
@@ -23,12 +25,17 @@ const editProfile = async (req, res, next) => {
       return res.status(404).json({ code: 404, message: "User not found" });
     }
     const dataUpdate = req.body;
-    await model.account.findByIdAndUpdate(uid, dataUpdate, { new: true });
-    return res.status(200).json({ code: 200, message: "update successful" });
+    const data = await model.account.findByIdAndUpdate(uid, dataUpdate, {
+      new: true,
+    });
+    return res
+      .status(200)
+      .json({ code: 200, data: data, message: "update successful" });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
+
 const uploadAvatar = async (req, res, next) => {
   try {
     const uid = req.params.uid;
@@ -36,22 +43,33 @@ const uploadAvatar = async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ code: 404, message: "User not found" });
     }
-    let image;
-    if (req.file) {
-      image = req.file.path;
+
+    console.log(req.file);
+    if (!req.file) {
+      return res.status(404).json({ code: 404, message: "file not found" });
     }
-    await model.account.findByIdAndUpdate(
+
+    if (user.avatar) {
+      const public_id = user.avatar.split(
+        "https://res.cloudinary.com/dwxavjnvc/image/upload/"
+      );
+      await cloudinary.uploader.destroy(public_id);
+    }
+
+    let image = req.file.path;
+    const data = await model.account.findByIdAndUpdate(
       uid,
       { avatar: image },
       { new: true }
     );
     return res
       .status(200)
-      .json({ code: 200, message: "upload avatar successful" });
+      .json({ code: 200, data: data, message: "upload avatar successful" });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
+
 const resetPassword = async (req, res, next) => {
   try {
     const uid = req.params.uid;
@@ -86,7 +104,7 @@ const resetPassword = async (req, res, next) => {
 const allUser = async (req, res, next) => {
   try {
     const user = req.user;
-    if (user.role_id != "admin") {
+    if (user.role_id == "customer") {
       return res.status(403).json({
         code: 403,
         message: "You do not have permission to use this function",
@@ -139,7 +157,11 @@ const changeActiveUser = async (req, res, next) => {
 
     const { uid } = req.params;
 
-    await model.account.findByIdAndUpdate(uid, { is_active: false });
+    const account = await model.account.findById(uid);
+
+    let active = !account.is_active;
+
+    await model.account.findByIdAndUpdate(uid, { is_active: active });
     return res
       .status(200)
       .json({ code: 200, message: "change active user successfully" });
@@ -175,6 +197,34 @@ const createAccountStaff = async (req, res, next) => {
   }
 };
 
+const changeActiveStaff = async (req, res) => {
+  try {
+    const user = req.user;
+    if (user.role_id != "admin") {
+      return res.status(403).json({
+        code: 403,
+        message: "You do not have permission to use this function",
+      });
+    }
+    const { staffId } = req.params;
+    const staff = await model.account.findById(staffId);
+    if (!staff) {
+      return res.status(404).json({ code: 404, message: "not found" });
+    }
+
+    if (staff.role_id != "staff") {
+      return res
+        .status(409)
+        .json({ code: 409, message: "account don't staff" });
+    }
+
+    await model.account.findByIdAndDelete(staffId);
+    return res.status(204).json({ code: 204, message: "account deleted" });
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
 module.exports = {
   detailProfile,
   resetPassword,
@@ -183,4 +233,5 @@ module.exports = {
   allUser,
   createAccountStaff,
   changeActiveUser,
+  changeActiveStaff,
 };

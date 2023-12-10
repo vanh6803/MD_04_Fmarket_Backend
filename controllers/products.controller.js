@@ -3,6 +3,7 @@ const productModel = require("../models/Products");
 const optionModel = require("../models/Option");
 const storeModel = require("../models/Store");
 const productRateModel = require("../models/ProductRate");
+const orderModel = require('../models/Orders');
 
 const addProduct = async (req, res, next) => {
   try {
@@ -29,14 +30,16 @@ const addProduct = async (req, res, next) => {
     if (!dataBody.status) {
       return res.status(404).json({ code: 404, message: "status is required" });
     }
-    const product = new productModel.product({ ...req.body, store_id });
+    const product = new productModel.product({ ...dataBody, store_id });
     await product.save();
     console.log(product);
     category.product.push(product._id);
     await category.save();
-    return res
-      .status(201)
-      .json({ code: 201, message: "created product successfully" });
+    return res.status(201).json({
+      code: 201,
+      result: product,
+      message: "created product successfully",
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ code: 500, message: error.message });
@@ -81,8 +84,17 @@ const addOption = async (req, res, next) => {
     await option.save();
     product.option.push(option._id);
     await product.save();
+    if (dataBody.discount_value > 0) {
+      await productModel.product.findByIdAndUpdate(product._id, {
+        discounted: true,
+      });
+    }
     console.log(option);
-    res.status(201).json({ code: 201, message: "created option successfully" });
+    res.status(201).json({
+      code: 201,
+      result: option,
+      message: "created option successfully",
+    });
   } catch (error) {
     console.error(error.message);
     return res.status(500).json({ code: 500, message: error.message });
@@ -93,16 +105,54 @@ const updateOption = async (req, res, next) => {
   try {
     const { optionId } = req.params;
     const dataBody = req.body;
+
+    const option = await optionModel.option.findById(optionId);
+
+    if (!option) {
+      return res.status(404).json({ code: 404, message: "option not found" });
+    }
+
+    await optionModel.option.findByIdAndUpdate(optionId, dataBody);
+
+    const hasDiscountValueOption = await optionModel.option.exists({
+      product_id: option.product_id,
+      discount_value: { $gt: 0 },
+    });
+
+    console.log(hasDiscountValueOption);
+
+    if (!hasDiscountValueOption) {
+      await productModel.product.findByIdAndUpdate(option.product_id, {
+        discounted: false,
+      });
+    } else {
+      await productModel.product.findByIdAndUpdate(option.product_id, {
+        discounted: true,
+      });
+    }
+
+    return res
+      .status(200)
+      .json({ code: 200, message: "option updated successfully" });
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
+const updateImageOption = async (req, res, next) => {
+  try {
+    const { optionId } = req.params;
     console.log("file: ", req.file);
+    let image;
     if (req.file) {
-      dataBody.image = req.file.path;
+      image = req.file.path;
     }
     await optionModel.option
-      .findByIdAndUpdate(optionId, dataBody)
+      .findByIdAndUpdate(optionId, { image: image }, { new: true })
       .then(() => {
         return res
           .status(200)
-          .json({ code: 200, message: "option updated successfully" });
+          .json({ code: 200, message: "option image updated successfully" });
       })
       .catch(() => {
         return res.status(404).json({ code: 404, message: "option not found" });
@@ -142,7 +192,10 @@ const detailProduct = async (req, res, next) => {
 const getProductsByCategory = async (req, res, next) => {
   try {
     const itemsPerPage = parseInt(req.query.itemsPerPage) || 1000000;
-    const categories = await categoryModel.category.find();
+    const queryCategory = req.query.category;
+    const categories = await categoryModel.category.find(
+      queryCategory ? { _id: queryCategory } : null
+    );
 
     // format data returned
     const result = categories.map(async (category) => {
@@ -200,14 +253,31 @@ const getAllProducts = async (req, res, next) => {
     const skip = (page - 1) * itemsPerPage;
     const totalProducts = await productModel.product.countDocuments();
     const totalPages = Math.ceil(totalProducts / itemsPerPage);
+    const category = req.query.category;
+    const store = req.query.store;
+    const discounted = req.query.discounted === "true";
 
-    const products = await productModel.product
-      .find()
+    let query = productModel.product.find();
+
+    if (category) {
+      query = query.where("category_id").equals(category);
+    }
+
+    if (store) {
+      query = query.where("store_id").equals(store);
+    }
+
+    if (discounted) {
+      query = query.where("discounted").equals(true);
+    }
+
+    const products = await query
       .skip(skip)
-      .limit(itemsPerPage);
+      .limit(itemsPerPage)
+      .populate(["store_id", "category_id"]);
 
     const result = products.map(async (product) => {
-      const { _id, name, discounted } = product;
+      const { _id, name, discounted, store_id, category_id } = product;
 
       // Lấy giá lớn nhất và giá nhỏ nhất của sản phẩm
       const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
@@ -219,6 +289,8 @@ const getAllProducts = async (req, res, next) => {
       return {
         _id,
         name,
+        store_id,
+        category_id,
         discounted,
         image: image,
         minPrice,
@@ -256,7 +328,7 @@ const getProductsByStore = async (req, res, next) => {
       .limit(itemsPerPage);
 
     const result = products.map(async (product) => {
-      const { _id, name, discounted } = product;
+      const { _id, name, discounted, store_id, category_id } = product;
 
       // Lấy giá lớn nhất và giá nhỏ nhất của sản phẩm
       const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
@@ -268,6 +340,8 @@ const getProductsByStore = async (req, res, next) => {
       return {
         _id,
         name,
+        store_id,
+        category_id,
         discounted,
         image: image,
         minPrice,
@@ -385,17 +459,63 @@ const getImageHotOption = async (product_id) => {
   }
 };
 
-const deleteOption = async (req, res, next) =>{
+const deleteOption = async (req, res, next) => {
   try {
-    const {optionId} = req.params
+    const { optionId } = req.params;
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
-}
+};
 
-const deleteProduct = async (req, res, next) =>{
+const deleteProduct = async (req, res, next) => {
   try {
-    const {productId} = req.params
+    const { productId } = req.params;
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
+const changeActiveProduct = async (req, res, next) => {
+  try {
+    const { productId } = req.params;
+    const user = req.user._id;
+    if (!user.role_id == "admin" || !user.role_id == "staff") {
+      return res.status(403).json({
+        code: 403,
+        message: "You do not have permission to use this function",
+      });
+    }
+    const product = await productModel.product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ code: 404, message: "Product not found" });
+    }
+    let active = !product.is_active;
+    await productModel.product.findByIdAndUpdate(
+      productId,
+      { is_active: active },
+      { new: true }
+    );
+    return res
+      .status(200)
+      .json({ code: 200, message: "change active product successfully" });
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
+const getTopProduct = async (req, res, next) => {
+  try {
+    const topSoldProducts = await optionModel.option.find({})
+      .sort({ soldQuantity: -1 })
+      .limit(10)
+      .populate('product_id')
+      .exec();
+
+    return res.status(200).json({
+      code: 200,
+      result: topSoldProducts,
+      message: "Get top sold products successfully",
+    });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
@@ -411,4 +531,7 @@ module.exports = {
   updateOption,
   getProductsByStore,
   getSimilarProducts,
+  getTopProduct,
+  updateImageOption,
+  changeActiveProduct,
 };

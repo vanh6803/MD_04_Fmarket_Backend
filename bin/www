@@ -7,7 +7,10 @@ require("dotenv").config();
 var app = require("../app");
 var debug = require("debug")("md-04-fmarket-backend:server");
 var http = require("http");
-
+var socketIo = require('socket.io');
+const messageCtrl = require('../controllers/message.controller');
+const productRate = require('../controllers/productRate.controller');
+const notifiCtrl = require('../controllers/notification.controller');
 /**
  * Get port from environment and store in Express.
  */
@@ -20,7 +23,7 @@ app.set("port", port);
  */
 
 var server = http.createServer(app);
-
+var io = socketIo(server);
 /**
  * Listen on provided port, on all network interfaces.
  */
@@ -85,3 +88,29 @@ function onListening() {
   debug("Listening on " + bind);
   console.log(`http://localhost:${port}`);
 }
+
+//socket
+io.on('connection', (socket) => {
+  console.log(`connection data`);
+   
+  socket.on('data', (msg) => {
+    console.log(`new_message`);
+    console.log(msg);
+    messageCtrl.dataProcessing(msg);
+    const newNotifi = notifiCtrl.newNotifiMessage(msg);
+    io.emit('new_message',msg);
+    io.emit('new_notification', newNotifi);
+  });
+
+  socket.on('new_cmt', (cmt) => {
+    console.log(cmt);
+    productRate.inserReview(cmt);
+    const newNotifi = notifiCtrl.newNotifiComment(cmt);
+    io.emit('new_cmt',cmt);
+    io.emit('new_notification', newNotifi);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected');
+  });
+});
