@@ -1,6 +1,8 @@
 const model = require("../models/ProductRate");
 const productModel = require("../models/Products");
 const userModel = require("../models/Account");
+const orderModel = require("../models/Orders");
+const optionModel = require("../models/Option");
 
 const getAllReviews = async (req, res, next) => {
   try {
@@ -19,6 +21,30 @@ const getAllReviews = async (req, res, next) => {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
+
+const inserReview = async (cmt) => {
+  try {
+    if (cmt) {
+      const { product_id, user_id, content, image, rate } = cmt;
+      const newReview = new model.productRate({
+        product_id: product_id || null,
+        user_id: user_id || null,
+        content: content || null,
+        image: image || null,
+        rate: rate || null,
+      });
+      await newReview.save();
+
+      console.log('Review inserted successfully!');
+    } else {
+      console.log('Invalid review data');
+    }
+  } catch (error) {
+    console.error(error.message);
+  }
+};
+
+
 const addReview = async (req, res, next) => {
   try {
     const idProduct = req.params.idProduct;
@@ -125,4 +151,5 @@ module.exports = {
   addReview,
   editReview,
   deleteReview,
+  inserReview,
 };

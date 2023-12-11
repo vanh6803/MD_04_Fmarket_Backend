@@ -56,17 +56,18 @@ const updateInfoByUserId = async (req, res, next) => {
   try {
     const user_id = req.user._id;
     const updateData = req.body;
+    const { infoId } = req.params;
 
     // If checked is true, update other info items for the user to false
     if (updateData.checked) {
       await infoModel.info.updateMany(
-        { user_id },
+        { user_id: user_id },
         { $set: { checked: false } }
       );
     }
 
-    const updatedInfo = await infoModel.info.findOneAndUpdate(
-      { user_id },
+    const updatedInfo = await infoModel.info.findByIdAndUpdate(
+      { _id: infoId },
       updateData,
       { new: true }
     );
