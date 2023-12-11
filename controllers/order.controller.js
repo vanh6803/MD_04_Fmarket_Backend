@@ -134,13 +134,36 @@ const updateOrderStatus = async (req, res, next) => {
       { new: true }
     );
 
+    // Check if the order status is updated successfully
+    if (!updatedOrder) {
+      return res.status(404).json({ code: 404, message: "Order not found" });
+    }
+
+    // If the order status is updated to 'Đã giao hàng', update quantity and soldQuantity
+    if (status === "Đã giao hàng") {
+      // Loop through productsOrder array in the order
+      for (const product of updatedOrder.productsOrder) {
+        const { option_id, quantity } = product;
+
+        // Find and update the option by ID
+        await optionModel.option.findByIdAndUpdate(
+          option_id,
+          {
+            $inc: { quantity: -quantity, soldQuantity: quantity },
+          },
+          { new: true }
+        );
+      }
+    }
+
     return res
       .status(200)
-      .json({ code: 200, message: "update stutus order successfully" });
+      .json({ code: 200, message: "Update status order successfully" });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
+
 
 const detailOrders = async (req, res, next) => {
   try {
