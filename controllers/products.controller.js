@@ -478,6 +478,13 @@ const deleteProduct = async (req, res, next) => {
 const changeActiveProduct = async (req, res, next) => {
   try {
     const { productId } = req.params;
+    const user = req.user._id;
+    if (!user.role_id == "admin" || !user.role_id == "staff") {
+      return res.status(403).json({
+        code: 403,
+        message: "You do not have permission to use this function",
+      });
+    }
     const product = await productModel.product.findById(productId);
     if (!product) {
       return res.status(404).json({ code: 404, message: "Product not found" });
