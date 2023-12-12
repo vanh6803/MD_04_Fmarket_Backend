@@ -3,7 +3,7 @@ const productModel = require("../models/Products");
 const optionModel = require("../models/Option");
 const storeModel = require("../models/Store");
 const productRateModel = require("../models/ProductRate");
-const orderModel = require('../models/Orders');
+const orderModel = require("../models/Orders");
 
 const addProduct = async (req, res, next) => {
   try {
@@ -202,6 +202,7 @@ const getProductsByCategory = async (req, res, next) => {
       const limitedProducts = await productModel.product
         .find({
           category_id: category._id,
+          is_active: true,
         })
         .populate("option")
         .limit(itemsPerPage);
@@ -209,6 +210,9 @@ const getProductsByCategory = async (req, res, next) => {
       const formattedProducts = [];
 
       for (const product of limitedProducts) {
+        const totalSoldQuantity = await calculateTotalSoldQuantity(
+          product.option
+        );
         const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
         const averageRate = await getAverageRate(product._id);
         const image = await getImageHotOption(product._id);
@@ -220,6 +224,7 @@ const getProductsByCategory = async (req, res, next) => {
           discounted: product.discounted,
           averageRate: averageRate,
           review: product.product_review.length,
+          soldQuantity: totalSoldQuantity,
         });
       }
 
@@ -257,7 +262,7 @@ const getAllProducts = async (req, res, next) => {
     const store = req.query.store;
     const discounted = req.query.discounted === "true";
 
-    let query = productModel.product.find();
+    let query = productModel.product.find({ is_active: true });
 
     if (category) {
       query = query.where("category_id").equals(category);
@@ -278,7 +283,9 @@ const getAllProducts = async (req, res, next) => {
 
     const result = products.map(async (product) => {
       const { _id, name, discounted, store_id, category_id } = product;
-
+      const totalSoldQuantity = await calculateTotalSoldQuantity(
+        product.option
+      );
       // Lấy giá lớn nhất và giá nhỏ nhất của sản phẩm
       const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
 
@@ -297,6 +304,7 @@ const getAllProducts = async (req, res, next) => {
         averageRate,
         review: product.product_review.length,
         active: product.is_active,
+        soldQuantity: totalSoldQuantity,
       };
     });
     const finalResult = await Promise.all(result);
@@ -323,7 +331,7 @@ const getProductsByStore = async (req, res, next) => {
     const skip = (page - 1) * itemsPerPage;
 
     const products = await productModel.product
-      .find({ store_id: store_id })
+      .find({ store_id: store_id, is_active: true })
       .skip(skip)
       .limit(itemsPerPage);
 
@@ -372,7 +380,11 @@ const getSimilarProducts = async (req, res) => {
 
     // Lấy danh sách các sản phẩm cùng danh mục (category) với sản phẩm hiện tại, giới hạn chỉ 5 sản phẩm
     const similarProducts = await productModel.product
-      .find({ category_id: product.category_id, _id: { $ne: productId } })
+      .find({
+        category_id: product.category_id,
+        _id: { $ne: productId },
+        is_active: true,
+      })
       .limit(5);
 
     const result = similarProducts.map(async (similarProduct) => {
@@ -424,6 +436,23 @@ const getAverageRate = async (product_id) => {
   }
 };
 
+// Function to calculate total soldQuantity for all options of a product
+const calculateTotalSoldQuantity = async (options) => {
+  try {
+    let totalSoldQuantity = 0;
+
+    for (const optionId of options) {
+      const option = await optionModel.option.findById(optionId);
+      totalSoldQuantity += option.soldQuantity || 0;
+    }
+
+    return totalSoldQuantity;
+  } catch (error) {
+    console.log(error.message);
+    throw error;
+  }
+};
+
 const getMinMaxPrices = async (product_id) => {
   try {
     const options = await optionModel.option.find(
@@ -461,7 +490,38 @@ const getImageHotOption = async (product_id) => {
 
 const deleteOption = async (req, res, next) => {
   try {
+    const user = req.user;
+
     const { optionId } = req.params;
+    console.log(user._id);
+
+    const option = await optionModel.option
+      .findById(optionId)
+      .populate("product_id");
+
+    if (!option) {
+      return res.status(404).json({ code: 404, message: "option not found" });
+    }
+
+    const optionsOrder = await orderModel.order.find({
+      "productsOrder.option_id": optionId,
+    });
+
+    if (
+      (optionsOrder.status =
+        "Chờ giao hàng" || optionsOrder.status == "Chờ xác nhận")
+    ) {
+      return res
+        .status(409)
+        .json({ code: 409, message: "you don't delete option" });
+    }
+
+    await optionModel.option.findByIdAndDelete(optionId);
+
+    return res.status(200).json({
+      code: 200,
+      message: "delete option successfully",
+    });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
@@ -470,6 +530,40 @@ const deleteOption = async (req, res, next) => {
 const deleteProduct = async (req, res, next) => {
   try {
     const { productId } = req.params;
+
+    // Check if the product exists
+    const product = await productModel.product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ code: 404, message: "Product not found" });
+    }
+
+    const optionsInOrders = await orderModel.order.find({
+      "productsOrder.option_id": { $in: product.option },
+      status: { $in: ["Chờ giao hàng", "Chờ xác nhận"] },
+    });
+
+    if (optionsInOrders.length > 0) {
+      return res.status(409).json({
+        code: 409,
+        message:
+          "Cannot delete product. Options are in orders with status 'Chờ giao hàng' or 'Chờ xác nhận'.",
+      });
+    }
+
+    // Delete the product
+    await productModel.product.findByIdAndDelete(productId);
+
+    // Remove the product reference from the associated category
+    const category = await categoryModel.category.findOneAndUpdate(
+      { product: productId },
+      { $pull: { product: productId } },
+      { new: true }
+    );
+
+    return res.status(200).json({
+      code: 200,
+      message: "Product deleted successfully",
+    });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
@@ -505,10 +599,11 @@ const changeActiveProduct = async (req, res, next) => {
 
 const getTopProduct = async (req, res, next) => {
   try {
-    const topSoldProducts = await optionModel.option.find({})
+    const topSoldProducts = await optionModel.option
+      .find({})
       .sort({ soldQuantity: -1 })
       .limit(10)
-      .populate('product_id')
+      .populate("product_id")
       .exec();
 
     return res.status(200).json({
@@ -519,7 +614,7 @@ const getTopProduct = async (req, res, next) => {
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
-}
+};
 
 module.exports = {
   addOption,
@@ -534,4 +629,6 @@ module.exports = {
   getTopProduct,
   updateImageOption,
   changeActiveProduct,
+  deleteOption,
+  deleteProduct,
 };

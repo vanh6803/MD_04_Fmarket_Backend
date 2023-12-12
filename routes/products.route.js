@@ -19,7 +19,7 @@ router.get("/all-product-by-store/:storeId", controller.getProductsByStore);
 router.get("/all-product-by-category", controller.getProductsByCategory);
 router.get("/detail-product/:productId", controller.detailProduct);
 router.get("/similar-product/:productId", controller.getSimilarProducts);
-router.get('/topProduct',controller.getTopProduct);
+router.get("/topProduct", controller.getTopProduct);
 //product
 router.post(
   "/create-product",
@@ -61,6 +61,17 @@ router.put(
   middleware.checkStoreExits,
   upload.single("image"),
   controller.updateImageOption
+);
+
+router.delete(
+  "/delete-option/:optionId",
+  middleware.checkToken,
+  controller.deleteOption
+);
+router.delete(
+  "/delete-product/:productId",
+  middleware.checkToken,
+  controller.deleteProduct
 );
 
 module.exports = router;
