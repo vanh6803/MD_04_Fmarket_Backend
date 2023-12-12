@@ -91,7 +91,7 @@ const getOrdersByUserId = async (req, res, next) => {
             const option = await optionModel.option
               .findById(productOrder.option_id)
               .lean()
-              .populate("product_id"); // Use lean to convert Mongoose document to plain JavaScript object
+              .populate("product_id");
 
             return {
               option_id: option,
