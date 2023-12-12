@@ -16,7 +16,7 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage });
 
-router.get("/:idProduct", controller.getAllReviews);
+router.get("/:idProduct", controller.getAllReviewsForProduct);
 router.post(
   "/create-review/:idProduct",
   middleware.checkToken,
