@@ -2,32 +2,55 @@ const db = require("../config/ConnectDB");
 const optionModel = require("../models/Option");
 const orderModel = require("../models/Orders");
 
-const calculateRevenueByMonth = async (req, res, next) => {
+const calculateRevenueAllTime = async (req, res, next) => {
   try {
-    // Đường ống tập hợp dữ liệu để tính toán doanh thu theo tháng
+    // Extract store_id and month from the request
+    const { store_id } = req.query;
+    
     const revenueByMonth = await orderModel.order.aggregate([
       {
         $match: {
-          // Thêm bất kỳ bộ lọc bổ sung nếu cần
+          "status": "Đã giao hàng",
+        },
+      },
+      {
+        $lookup: {
+          from: "options",
+          localField: "productsOrder.option_id",
+          foreignField: "_id",
+          as: "order_options",
+        },
+      },
+      {
+        $unwind: "$order_options",
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "order_options.product_id",
+          foreignField: "_id",
+          as: "product",
+        },
+      },
+      {
+        $unwind: "$product",
+      },
+      {
+        $match: {
+          "product.store_id": new db.mongoose.Types.ObjectId(store_id),
         },
       },
       {
         $group: {
-          _id: {
-            year: { $year: "$createdAt" },
-            month: { $month: "$createdAt" },
-          },
+          _id: store_id,
           totalRevenue: { $sum: "$total_price" },
         },
-      },
-      {
-        $sort: { "_id.year": 1, "_id.month": 1 },
       },
     ]);
 
     return res.status(200).json({
       code: 200,
-      message: "Thống kê doanh thu theo tháng",
+      message: `Tất cả doanh thu của cửa hàng`,
       data: revenueByMonth,
     });
   } catch (error) {
@@ -36,5 +59,5 @@ const calculateRevenueByMonth = async (req, res, next) => {
 };
 
 module.exports = {
-  calculateRevenueByMonth,
+  calculateRevenueAllTime,
 };
