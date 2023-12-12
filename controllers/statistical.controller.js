@@ -7,7 +7,7 @@ const calculateRevenueAllTime = async (req, res, next) => {
     // Extract store_id and month from the request
     const { store_id } = req.query;
 
-    const revenueByMonth = await orderModel.order.aggregate([
+    const revenue = await orderModel.order.aggregate([
       {
         $match: {
           "status": "Đã giao hàng",
@@ -51,7 +51,7 @@ const calculateRevenueAllTime = async (req, res, next) => {
     return res.status(200).json({
       code: 200,
       message: `Tất cả doanh thu của cửa hàng`,
-      data: revenueByMonth,
+      data: revenue,
     });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
@@ -108,10 +108,12 @@ const calculateRevenueByMonth = async (req, res, next) => {
       },
     ]);
 
+    const totalRevenue = revenueByMonth.length > 0 ? revenueByMonth[0].totalRevenue : 0;
+
     return res.status(200).json({
       code: 200,
       message: `Doanh thu của cửa hàng tháng ${month}`,
-      data: revenueByMonth.length > 0 ? revenueByMonth : [{ _id: store_id, totalRevenue: 0 }],
+      data: totalRevenue
     });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
