@@ -537,6 +537,19 @@ const deleteProduct = async (req, res, next) => {
       return res.status(404).json({ code: 404, message: "Product not found" });
     }
 
+    const optionsInOrders = await orderModel.order.find({
+      "productsOrder.option_id": { $in: product.option },
+      status: { $in: ["Chờ giao hàng", "Chờ xác nhận"] },
+    });
+
+    if (optionsInOrders.length > 0) {
+      return res.status(409).json({
+        code: 409,
+        message:
+          "Cannot delete product. Options are in orders with status 'Chờ giao hàng' or 'Chờ xác nhận'.",
+      });
+    }
+
     // Delete the product
     await productModel.product.findByIdAndDelete(productId);
 
