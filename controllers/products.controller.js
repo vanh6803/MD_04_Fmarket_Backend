@@ -4,6 +4,7 @@ const optionModel = require("../models/Option");
 const storeModel = require("../models/Store");
 const productRateModel = require("../models/ProductRate");
 const orderModel = require("../models/Orders");
+const { sendEmail } = require("../utils/NodemailerService");
 
 const addProduct = async (req, res, next) => {
   try {
@@ -257,6 +258,7 @@ const getAllProducts = async (req, res, next) => {
       store,
       discounted,
       isActive,
+      sort,
     } = req.query;
     const skip = (page - 1) * itemsPerPage;
 
@@ -277,6 +279,8 @@ const getAllProducts = async (req, res, next) => {
     if (isActive) {
       query.where("is_active").equals(true);
     }
+
+    query.sort(sort ? { updatedAt: sort } : { createAt: 1 });
 
     const totalProducts = await productModel.product.countDocuments();
     const totalPages = Math.ceil(totalProducts / itemsPerPage);
@@ -392,7 +396,9 @@ const getSimilarProducts = async (req, res) => {
     const result = await Promise.all(
       similarProducts.map(async (similarProduct) => {
         const { _id, name, discounted } = similarProduct;
-        const { minPrice, maxPrice } = await getMinMaxPrices(similarProduct._id);
+        const { minPrice, maxPrice } = await getMinMaxPrices(
+          similarProduct._id
+        );
         const averageRate = await getAverageRate(similarProduct._id);
         const image = await getImageHotOption(similarProduct._id);
 
@@ -619,9 +625,33 @@ const getTopProduct = async (req, res, next) => {
   }
 };
 
-const sendEmailReport = async (req, res, next) => {
+const sendEmailToStore = async (req, res, next) => {
   try {
+    const user = req.user;
     const { storeId, productId, content } = req.body;
+
+    if (user.role_id == "customer") {
+      return res
+        .status(403)
+        .json({ code: 403, message: "you don't permission" });
+    }
+
+    const store = await storeModel.store
+      .findById(storeId)
+      .populate("account_id");
+    if (!store) {
+      return res.status(404).json({ code: 404, message: "store not found" });
+    }
+
+    const product = await productModel.product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ code: 404, message: "product not found" });
+    }
+    sendEmail(store.account_id.email, "cảnh báo sản phẩm", content);
+    return res.status(200).json({
+      code: 200,
+      message: "send email successfully",
+    });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
@@ -642,4 +672,5 @@ module.exports = {
   changeActiveProduct,
   deleteOption,
   deleteProduct,
+  sendEmailToStore,
 };
