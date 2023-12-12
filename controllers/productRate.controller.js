@@ -48,9 +48,10 @@ const inserReview = async (cmt) => {
 
 const addReview = async (req, res, next) => {
   try {
+    const user = req.user
     const idProduct = req.params.idProduct;
 
-    let { user_id, content, image, rate } = req.body;
+    let { content, image, rate } = req.body;
 
     const product = await productModel.product.findById(idProduct);
 
@@ -58,23 +59,20 @@ const addReview = async (req, res, next) => {
       return res.status(404).json({ code: 404, message: "product not found" });
     }
 
-    const user = await userModel.account.findById(user_id);
-    if (!user) {
-      return res.status(404).json({ code: 404, message: "User not found" });
-    }
 
     if (req.file) {
       image = req.file.path;
     }
 
     const newReview = new model.productRate({
-      user_id: user_id,
+      user_id: user._id,
+      product_id: idProduct,
       image: image,
       content: content,
       rate: rate,
     });
 
-    await newReview.save();
+    await newReview.save()
 
     return res
       .status(201)
