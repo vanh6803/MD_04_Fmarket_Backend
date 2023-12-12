@@ -12,7 +12,7 @@ const getAllReviewsForProduct = async (req, res, next) => {
 
     const allReviews = await model.productRate
       .find({ product_id: idProduct })
-      .populate(["product_id, user_id"]);
+      .populate(["product_id", "user_id"]);
 
     return res
       .status(200)
