@@ -23,4 +23,6 @@ router.get(
   controller.ordersForStore
 );
 
+router.get('/collect-order/:storeId', controller.collectOrders);
+
 module.exports = router;

@@ -246,10 +246,40 @@ const ordersForStore = async (req, res, next) => {
   }
 };
 
+const collectOrders = async (req, res, next) => {
+  try {
+    const { storeId } = req.params;
+
+    // Find orders with the "Đã giao hàng" status and the specified storeId
+    const orders = await orderModel.order.find({ status: "Đã giao hàng" })
+      .populate({
+        path: "productsOrder",
+        populate: {
+          path: "option_id",
+          model: "option",
+          populate: {
+            path: "product_id",
+            model: "product",
+            match: { store_id: storeId },
+            select: "name",
+          },
+        },
+      })
+      .exec();
+      console.log(orders);
+    res.status(200).json({ code: 200, data: orders });
+
+  } catch (error) {
+    console.error("Error in catch block:", error);
+    return res.status(500).json({ code: 500, message: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   createOrder,
   getOrdersByUserId,
   updateOrderStatus,
   detailOrders,
   ordersForStore,
+  collectOrders
 };
