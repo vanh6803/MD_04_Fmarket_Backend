@@ -21,13 +21,6 @@ const addBanner = async (req, res, next) => {
       data.image = req.file.path;
     }
 
-    const existingBanner = await models.banner.findOne({ note: data.note });
-    if (existingBanner) {
-      return res
-        .status(409)
-        .json({ code: 409, message: "banner already exists" });
-    }
-
     let obj = new models.banner(data);
 
     await obj.save();
