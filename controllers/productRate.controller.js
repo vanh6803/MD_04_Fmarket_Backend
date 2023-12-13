@@ -4,7 +4,7 @@ const userModel = require("../models/Account");
 const orderModel = require("../models/Orders");
 const optionModel = require("../models/Option");
 
-const getAllReviews = async (req, res, next) => {
+const getAllReviewsForProduct = async (req, res, next) => {
   try {
     const idProduct = req.params.idProduct;
     const product = await productModel.product.findById(idProduct);
@@ -12,7 +12,9 @@ const getAllReviews = async (req, res, next) => {
       return res.status(404).json({ code: 404, message: "User not found" });
     }
 
-    const allReviews = await model.productRate.find();
+    const allReviews = await model.productRate
+      .find({ product_id: idProduct })
+      .populate(["product_id", "user_id"]);
 
     return res
       .status(200)
@@ -46,9 +48,10 @@ const inserReview = async (cmt) => {
 
 const addReview = async (req, res, next) => {
   try {
+    const user = req.user
     const idProduct = req.params.idProduct;
 
-    let { user_id, content, image, rate } = req.body;
+    let { content, image, rate } = req.body;
 
     const product = await productModel.product.findById(idProduct);
 
@@ -56,23 +59,20 @@ const addReview = async (req, res, next) => {
       return res.status(404).json({ code: 404, message: "product not found" });
     }
 
-    const user = await userModel.account.findById(user_id);
-    if (!user) {
-      return res.status(404).json({ code: 404, message: "User not found" });
-    }
 
     if (req.file) {
       image = req.file.path;
     }
 
     const newReview = new model.productRate({
-      user_id: user_id,
+      user_id: user._id,
+      product_id: idProduct,
       image: image,
       content: content,
       rate: rate,
     });
 
-    await newReview.save();
+    await newReview.save()
 
     return res
       .status(201)
@@ -148,9 +148,9 @@ const deleteReview = async (req, res, next) => {
 };
 
 module.exports = {
-  getAllReviews,
   addReview,
   editReview,
   deleteReview,
   inserReview,
+  getAllReviewsForProduct,
 };

@@ -17,6 +17,7 @@ var bannerRoute = require("./routes/banner.route");
 var storeRoute = require("./routes/store.route");
 var messageRoute = require("./routes/message.route");
 var notifiRoute = require("./routes/notification.route");
+var statisticalRoute = require('./routes/statistical.route'); 
 
 var app = express();
 app.use(cors());
@@ -42,6 +43,7 @@ app.use("/api/info", infoRoute);
 app.use("/api/banner", bannerRoute);
 app.use('/api/message',messageRoute);
 app.use('/api/notifi',notifiRoute);
+app.use('/api/statistical', statisticalRoute);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

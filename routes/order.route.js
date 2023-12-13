@@ -22,5 +22,7 @@ router.get(
   middleware.checkStoreExits,
   controller.ordersForStore
 );
+// hủy order
+router.get('/cancel-order', middleware.checkToken, controller.cancelOrder)
 
 module.exports = router;

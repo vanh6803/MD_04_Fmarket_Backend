@@ -91,7 +91,7 @@ const getOrdersByUserId = async (req, res, next) => {
             const option = await optionModel.option
               .findById(productOrder.option_id)
               .lean()
-              .populate("product_id"); // Use lean to convert Mongoose document to plain JavaScript object
+              .populate("product_id");
 
             return {
               option_id: option,
@@ -128,19 +128,52 @@ const updateOrderStatus = async (req, res, next) => {
     const { orderId } = req.params;
     const { status } = req.body;
 
-    const updatedOrder = await orderModel.order.findByIdAndUpdate(
+    const order = await orderModel.order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({ code: 404, message: "order not found" });
+    }
+
+    if (order.status == "Đã hủy") {
+      return res.status(409).json({ code: 409, message: "Don't change status order" });
+    }
+
+    await orderModel.order.findByIdAndUpdate(
       orderId,
       { status },
       { new: true }
     );
 
+    // Check if the order status is updated successfully
+    if (!updatedOrder) {
+      return res.status(404).json({ code: 404, message: "Order not found" });
+    }
+
+    // If the order status is updated to 'Đã giao hàng', update quantity and soldQuantity
+    if (status === "Đã giao hàng") {
+      // Loop through productsOrder array in the order
+      for (const product of updatedOrder.productsOrder) {
+        const { option_id, quantity } = product;
+
+        // Find and update the option by ID
+        await optionModel.option.findByIdAndUpdate(
+          option_id,
+          {
+            $inc: { quantity: -quantity, soldQuantity: quantity },
+          },
+          { new: true }
+        );
+      }
+    }
+
     return res
       .status(200)
-      .json({ code: 200, message: "update stutus order successfully" });
+      .json({ code: 200, message: "Update status order successfully" });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
+
 
 const detailOrders = async (req, res, next) => {
   try {
@@ -160,7 +193,7 @@ const detailOrders = async (req, res, next) => {
 
 const ordersForStore = async (req, res, next) => {
   try {
-    const store_id = req.store._id;
+    const store_id = req.query.store._id;
     const status = req.query.status;
     //Lấy danh sách sản phẩm thuộc cửa hàng
     const products = await productModel.product.find({ store_id }).lean();
@@ -223,10 +256,39 @@ const ordersForStore = async (req, res, next) => {
   }
 };
 
+const cancelOrder = async (req, res, next) => {
+  try {
+    const { orderId } = req.params;
+
+    const order = await orderModel.order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({ code: 404, message: "order not found" });
+    }
+
+    if (order.status != "Chờ xác nhận") {
+      return res.status(409).json({ code: 409, message: "Don't cancel order" });
+    }
+
+    await orderModel.order.findByIdAndUpdate(
+      orderId,
+      { status: "Đã hủy" },
+      { new: true }
+    );
+
+    return res
+      .status(200)
+      .json({ code: 200, message: "update stutus order successfully" });
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
 module.exports = {
   createOrder,
   getOrdersByUserId,
   updateOrderStatus,
   detailOrders,
   ordersForStore,
+  cancelOrder
 };

@@ -3,7 +3,8 @@ const productModel = require("../models/Products");
 const optionModel = require("../models/Option");
 const storeModel = require("../models/Store");
 const productRateModel = require("../models/ProductRate");
-const orderModel = require('../models/Orders');
+const orderModel = require("../models/Orders");
+const { sendEmail } = require("../utils/NodemailerService");
 
 const addProduct = async (req, res, next) => {
   try {
@@ -193,49 +194,53 @@ const getProductsByCategory = async (req, res, next) => {
   try {
     const itemsPerPage = parseInt(req.query.itemsPerPage) || 1000000;
     const queryCategory = req.query.category;
-    const categories = await categoryModel.category.find(
-      queryCategory ? { _id: queryCategory } : null
+
+    const categories = await categoryModel.category
+      .find(queryCategory ? { _id: queryCategory } : null)
+      .lean();
+
+    const result = await Promise.all(
+      categories.map(async (category) => {
+        const limitedProducts = await productModel.product
+          .find({ category_id: category._id, is_active: true })
+          .populate("option")
+          .limit(itemsPerPage)
+          .lean();
+
+        const formattedProducts = await Promise.all(
+          limitedProducts.map(async (product) => {
+            const totalSoldQuantity = await calculateTotalSoldQuantity(
+              product.option
+            );
+            const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
+            const averageRate = await getAverageRate(product._id);
+            const image = await getImageHotOption(product._id);
+
+            return {
+              _id: product._id,
+              name: product.name,
+              image,
+              minPrice,
+              discounted: product.discounted,
+              averageRate,
+              review: product.product_review.length,
+              soldQuantity: totalSoldQuantity,
+            };
+          })
+        );
+
+        return {
+          _id: category._id,
+          nameCategory: category.name,
+          product: formattedProducts,
+        };
+      })
     );
 
-    // format data returned
-    const result = categories.map(async (category) => {
-      const limitedProducts = await productModel.product
-        .find({
-          category_id: category._id,
-        })
-        .populate("option")
-        .limit(itemsPerPage);
-
-      const formattedProducts = [];
-
-      for (const product of limitedProducts) {
-        const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
-        const averageRate = await getAverageRate(product._id);
-        const image = await getImageHotOption(product._id);
-        formattedProducts.push({
-          _id: product._id,
-          name: product.name,
-          image: image,
-          minPrice: minPrice,
-          discounted: product.discounted,
-          averageRate: averageRate,
-          review: product.product_review.length,
-        });
-      }
-
-      return {
-        _id: category._id,
-        nameCategory: category.name,
-        product: formattedProducts,
-      };
-    });
-
-    // Đợi cho tất cả các danh mục được xử lý và trả về
-    const finalResult = await Promise.all(result);
     return res.status(200).json({
       code: 200,
-      result: finalResult,
-      message: "get product by category successfull",
+      result,
+      message: "get product by category successful",
     });
   } catch (error) {
     console.log(error.message);
@@ -244,67 +249,80 @@ const getProductsByCategory = async (req, res, next) => {
 };
 
 const getAllProducts = async (req, res, next) => {
+  const populateFields = ["store_id", "category_id", "option"];
   try {
-    // Get the page number and items per page from query parameters (default values if not provided)
-    const page = parseInt(req.query.page) || 1;
-    const itemsPerPage = parseInt(req.query.itemsPerPage) || 1000000000; // You can adjust this value as needed
-
-    // Calculate the skip value based on page number and items per page
+    const {
+      page = 1,
+      itemsPerPage = 1000000000,
+      category,
+      store,
+      discounted,
+      isActive,
+      sort,
+    } = req.query;
     const skip = (page - 1) * itemsPerPage;
-    const totalProducts = await productModel.product.countDocuments();
-    const totalPages = Math.ceil(totalProducts / itemsPerPage);
-    const category = req.query.category;
-    const store = req.query.store;
-    const discounted = req.query.discounted === "true";
 
-    let query = productModel.product.find();
+    let query = productModel.product.find().lean();
 
     if (category) {
-      query = query.where("category_id").equals(category);
+      query.where("category_id").in(category);
     }
 
     if (store) {
-      query = query.where("store_id").equals(store);
+      query.where("store_id").in(store);
     }
 
     if (discounted) {
-      query = query.where("discounted").equals(true);
+      query.where("discounted").equals(true);
     }
+
+    if (isActive) {
+      query.where("is_active").equals(true);
+    }
+
+    query.sort(sort ? { updatedAt: sort } : { createAt: 1 });
+
+    const totalProducts = await productModel.product.countDocuments();
+    const totalPages = Math.ceil(totalProducts / itemsPerPage);
 
     const products = await query
       .skip(skip)
       .limit(itemsPerPage)
-      .populate(["store_id", "category_id"]);
+      .populate(populateFields)
+      .exec();
 
-    const result = products.map(async (product) => {
-      const { _id, name, discounted, store_id, category_id } = product;
+    const result = await Promise.all(
+      products.map(async (product) => {
+        const { _id, name, discounted, store_id, category_id, option } =
+          product;
+        const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
+        const averageRate = await getAverageRate(product._id);
+        const image = await getImageHotOption(product._id);
+        const totalSoldQuantity = await calculateTotalSoldQuantity(
+          product.option
+        );
 
-      // Lấy giá lớn nhất và giá nhỏ nhất của sản phẩm
-      const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
+        return {
+          _id,
+          name,
+          store_id,
+          category_id,
+          discounted,
+          image,
+          minPrice,
+          averageRate,
+          review: product.product_review.length,
+          active: product.is_active,
+          soldQuantity: totalSoldQuantity,
+        };
+      })
+    );
 
-      // Lấy sao trung bình của sản phẩm
-      const averageRate = await getAverageRate(product._id);
-      const image = await getImageHotOption(product._id);
-
-      return {
-        _id,
-        name,
-        store_id,
-        category_id,
-        discounted,
-        image: image,
-        minPrice,
-        averageRate,
-        review: product.product_review.length,
-        active: product.is_active,
-      };
-    });
-    const finalResult = await Promise.all(result);
     return res.status(200).json({
       code: 200,
-      result: finalResult,
-      totalPages: totalPages,
-      message: "get all product successfull",
+      result,
+      totalPages,
+      message: "get all product successful",
     });
   } catch (error) {
     console.log(error.message);
@@ -315,45 +333,41 @@ const getAllProducts = async (req, res, next) => {
 const getProductsByStore = async (req, res, next) => {
   try {
     const store_id = req.params.storeId;
-    // Get the page number and items per page from query parameters (default values if not provided)
     const page = parseInt(req.query.page) || 1;
-    const itemsPerPage = parseInt(req.query.itemsPerPage) || 10; // You can adjust this value as needed
-
-    // Calculate the skip value based on page number and items per page
+    const itemsPerPage = parseInt(req.query.itemsPerPage) || 10;
     const skip = (page - 1) * itemsPerPage;
 
     const products = await productModel.product
-      .find({ store_id: store_id })
+      .find({ store_id, is_active: true })
       .skip(skip)
-      .limit(itemsPerPage);
+      .limit(itemsPerPage)
+      .lean();
 
-    const result = products.map(async (product) => {
-      const { _id, name, discounted, store_id, category_id } = product;
+    const result = await Promise.all(
+      products.map(async (product) => {
+        const { _id, name, discounted, store_id, category_id } = product;
+        const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
+        const averageRate = await getAverageRate(product._id);
+        const image = await getImageHotOption(product._id);
 
-      // Lấy giá lớn nhất và giá nhỏ nhất của sản phẩm
-      const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
+        return {
+          _id,
+          name,
+          store_id,
+          category_id,
+          discounted,
+          image,
+          minPrice,
+          averageRate,
+          review: product.product_review.length,
+        };
+      })
+    );
 
-      // Lấy sao trung bình của sản phẩm
-      const averageRate = await getAverageRate(product._id);
-      const image = await getImageHotOption(product._id);
-
-      return {
-        _id,
-        name,
-        store_id,
-        category_id,
-        discounted,
-        image: image,
-        minPrice,
-        averageRate,
-        review: product.product_review.length,
-      };
-    });
-    const finalResult = await Promise.all(result);
     return res.status(200).json({
       code: 200,
-      result: finalResult,
-      message: "get all product successfull",
+      result,
+      message: "get all product successful",
     });
   } catch (error) {
     console.log(error.message);
@@ -370,32 +384,39 @@ const getSimilarProducts = async (req, res) => {
       return res.status(404).json({ code: 404, message: "Product not found" });
     }
 
-    // Lấy danh sách các sản phẩm cùng danh mục (category) với sản phẩm hiện tại, giới hạn chỉ 5 sản phẩm
     const similarProducts = await productModel.product
-      .find({ category_id: product.category_id, _id: { $ne: productId } })
-      .limit(5);
+      .find({
+        category_id: product.category_id,
+        _id: { $ne: productId },
+        is_active: true,
+      })
+      .limit(5)
+      .lean();
 
-    const result = similarProducts.map(async (similarProduct) => {
-      const { _id, name, discounted } = similarProduct;
-      const { minPrice, maxPrice } = await getMinMaxPrices(similarProduct._id);
-      const averageRate = await getAverageRate(similarProduct._id);
-      const image = await getImageHotOption(product._id);
-      return {
-        _id,
-        name,
-        discounted,
-        image: image,
-        minPrice,
-        averageRate,
-        review: similarProduct.product_review.length,
-      };
-    });
+    const result = await Promise.all(
+      similarProducts.map(async (similarProduct) => {
+        const { _id, name, discounted } = similarProduct;
+        const { minPrice, maxPrice } = await getMinMaxPrices(
+          similarProduct._id
+        );
+        const averageRate = await getAverageRate(similarProduct._id);
+        const image = await getImageHotOption(similarProduct._id);
 
-    const similarProductsList = await Promise.all(result);
+        return {
+          _id,
+          name,
+          discounted,
+          image,
+          minPrice,
+          averageRate,
+          review: similarProduct.product_review.length,
+        };
+      })
+    );
 
     return res.status(200).json({
       code: 200,
-      result: similarProductsList,
+      result,
       message: "get similar products successfully",
     });
   } catch (error) {
@@ -420,6 +441,23 @@ const getAverageRate = async (product_id) => {
     return averageRate;
   } catch (error) {
     console.error(error.message);
+    throw error;
+  }
+};
+
+// Function to calculate total soldQuantity for all options of a product
+const calculateTotalSoldQuantity = async (options) => {
+  try {
+    let totalSoldQuantity = 0;
+
+    for (const optionId of options) {
+      const option = await optionModel.option.findById(optionId);
+      totalSoldQuantity += option.soldQuantity || 0;
+    }
+
+    return totalSoldQuantity;
+  } catch (error) {
+    console.log(error.message);
     throw error;
   }
 };
@@ -461,7 +499,38 @@ const getImageHotOption = async (product_id) => {
 
 const deleteOption = async (req, res, next) => {
   try {
+    const user = req.user;
+
     const { optionId } = req.params;
+    console.log(user._id);
+
+    const option = await optionModel.option
+      .findById(optionId)
+      .populate("product_id");
+
+    if (!option) {
+      return res.status(404).json({ code: 404, message: "option not found" });
+    }
+
+    const optionsOrder = await orderModel.order.find({
+      "productsOrder.option_id": optionId,
+    });
+
+    if (
+      (optionsOrder.status =
+        "Chờ giao hàng" || optionsOrder.status == "Chờ xác nhận")
+    ) {
+      return res
+        .status(409)
+        .json({ code: 409, message: "you don't delete option" });
+    }
+
+    await optionModel.option.findByIdAndDelete(optionId);
+
+    return res.status(200).json({
+      code: 200,
+      message: "delete option successfully",
+    });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
@@ -470,6 +539,40 @@ const deleteOption = async (req, res, next) => {
 const deleteProduct = async (req, res, next) => {
   try {
     const { productId } = req.params;
+
+    // Check if the product exists
+    const product = await productModel.product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ code: 404, message: "Product not found" });
+    }
+
+    const optionsInOrders = await orderModel.order.find({
+      "productsOrder.option_id": { $in: product.option },
+      status: { $in: ["Chờ giao hàng", "Chờ xác nhận"] },
+    });
+
+    if (optionsInOrders.length > 0) {
+      return res.status(409).json({
+        code: 409,
+        message:
+          "Cannot delete product. Options are in orders with status 'Chờ giao hàng' or 'Chờ xác nhận'.",
+      });
+    }
+
+    // Delete the product
+    await productModel.product.findByIdAndDelete(productId);
+
+    // Remove the product reference from the associated category
+    const category = await categoryModel.category.findOneAndUpdate(
+      { product: productId },
+      { $pull: { product: productId } },
+      { new: true }
+    );
+
+    return res.status(200).json({
+      code: 200,
+      message: "Product deleted successfully",
+    });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
@@ -505,10 +608,11 @@ const changeActiveProduct = async (req, res, next) => {
 
 const getTopProduct = async (req, res, next) => {
   try {
-    const topSoldProducts = await optionModel.option.find({})
+    const topSoldProducts = await optionModel.option
+      .find({})
       .sort({ soldQuantity: -1 })
       .limit(10)
-      .populate('product_id')
+      .populate("product_id")
       .exec();
 
     return res.status(200).json({
@@ -519,7 +623,39 @@ const getTopProduct = async (req, res, next) => {
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
-}
+};
+
+const sendEmailToStore = async (req, res, next) => {
+  try {
+    const user = req.user;
+    const { storeId, productId, content } = req.body;
+
+    if (user.role_id == "customer") {
+      return res
+        .status(403)
+        .json({ code: 403, message: "you don't permission" });
+    }
+
+    const store = await storeModel.store
+      .findById(storeId)
+      .populate("account_id");
+    if (!store) {
+      return res.status(404).json({ code: 404, message: "store not found" });
+    }
+
+    const product = await productModel.product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ code: 404, message: "product not found" });
+    }
+    sendEmail(store.account_id.email, "cảnh báo sản phẩm", content);
+    return res.status(200).json({
+      code: 200,
+      message: "send email successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
 
 module.exports = {
   addOption,
@@ -534,4 +670,7 @@ module.exports = {
   getTopProduct,
   updateImageOption,
   changeActiveProduct,
+  deleteOption,
+  deleteProduct,
+  sendEmailToStore,
 };
