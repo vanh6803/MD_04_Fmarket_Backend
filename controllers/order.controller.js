@@ -183,7 +183,7 @@ const detailOrders = async (req, res, next) => {
 
 const ordersForStore = async (req, res, next) => {
   try {
-    const store_id = req.store._id;
+    const store_id = req.query.store._id;
     const status = req.query.status;
     //Lấy danh sách sản phẩm thuộc cửa hàng
     const products = await productModel.product.find({ store_id }).lean();
