@@ -214,6 +214,30 @@ const getAllStore = async (req, res) => {
   }
 };
 
+const changeActiveStore = async (req, res) => {
+  try {
+    const { storeId } = req.params;
+    const user = req.user._id;
+    if (!user.role_id == "admin" || !user.role_id == "staff") {
+      return res.status(403).json({
+        code: 403,
+        message: "You do not have permission to use this function",
+      });
+    }
+    const store = await storeModel.store.findById(storeId);
+    if (!store) {
+      return res.status(404).json({ code: 404, message: "Store not found" });
+    }
+    let active = !store.is_active;
+    await storeModel.store.findByIdAndUpdate(storeId, { is_active: active });
+    return res
+      .status(200)
+      .json({ code: 200, message: "change active product successfully" });
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+};
+
 module.exports = {
   createStore,
   detailStore,
@@ -224,4 +248,5 @@ module.exports = {
   checkExitingStore,
   getStoreIdByAccountId,
   getAllStore,
+  changeActiveStore,
 };

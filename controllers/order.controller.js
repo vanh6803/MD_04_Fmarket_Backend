@@ -128,7 +128,17 @@ const updateOrderStatus = async (req, res, next) => {
     const { orderId } = req.params;
     const { status } = req.body;
 
-    const updatedOrder = await orderModel.order.findByIdAndUpdate(
+    const order = await orderModel.order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({ code: 404, message: "order not found" });
+    }
+
+    if (order.status == "Đã hủy") {
+      return res.status(409).json({ code: 409, message: "Don't change status order" });
+    }
+
+    await orderModel.order.findByIdAndUpdate(
       orderId,
       { status },
       { new: true }
@@ -267,13 +277,41 @@ const collectOrders = async (req, res, next) => {
       })
       .exec();
       console.log(orders);
-    res.status(200).json({ code: 200, data: orders });
+    res.status(200).json({ code: 200, data: orders, message: "get collect order success!" });
 
   } catch (error) {
     console.error("Error in catch block:", error);
-    return res.status(500).json({ code: 500, message: "Internal Server Error" });
-  }
+    return res.status(500).json({ code: 500, message: error.message });
+  }  
 };
+
+const cancelOrder = async (req, res, next) => {
+  try {
+    const { orderId } = req.params;
+
+    const order = await orderModel.order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({ code: 404, message: "order not found" });
+    }
+
+    if (order.status != "Chờ xác nhận") {
+      return res.status(409).json({ code: 409, message: "Don't cancel order" });
+    }
+
+    await orderModel.order.findByIdAndUpdate(
+      orderId,
+      { status: "Đã hủy" },
+      { new: true }
+    );
+
+    return res
+      .status(200)
+      .json({ code: 200, message: "update stutus order successfully" });
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+}
 
 module.exports = {
   createOrder,
@@ -281,5 +319,6 @@ module.exports = {
   updateOrderStatus,
   detailOrders,
   ordersForStore,
-  collectOrders
+  collectOrders,
+  cancelOrder,
 };

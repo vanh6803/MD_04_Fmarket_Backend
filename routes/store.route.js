@@ -57,10 +57,12 @@ router.get(
   controller.checkExitingStore
 );
 
-router.get(
-  "/all-store",
+router.get("/all-store", middlware.checkToken, controller.getAllStore);
+
+router.put(
+  "/change-active/:storeId",
   middlware.checkToken,
-  controller.getAllStore
+  controller.changeActiveStore
 );
 // router.get(
 //   "/get-store-id/:accountId",
