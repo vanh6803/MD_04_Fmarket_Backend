@@ -256,6 +256,35 @@ const ordersForStore = async (req, res, next) => {
   }
 };
 
+const collectOrders = async (req, res, next) => {
+  try {
+    const { storeId } = req.params;
+
+    // Find orders with the "Đã giao hàng" status and the specified storeId
+    const orders = await orderModel.order.find({ status: "Đã giao hàng" })
+      .populate({
+        path: "productsOrder",
+        populate: {
+          path: "option_id",
+          model: "option",
+          populate: {
+            path: "product_id",
+            model: "product",
+            match: { store_id: storeId },
+            select: "name",
+          },
+        },
+      })
+      .exec();
+      console.log(orders);
+    res.status(200).json({ code: 200, data: orders, message: "get collect order success!" });
+
+  } catch (error) {
+    console.error("Error in catch block:", error);
+    return res.status(500).json({ code: 500, message: error.message });
+  }  
+};
+
 const cancelOrder = async (req, res, next) => {
   try {
     const { orderId } = req.params;
@@ -282,7 +311,7 @@ const cancelOrder = async (req, res, next) => {
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
-};
+}
 
 module.exports = {
   createOrder,
@@ -290,5 +319,6 @@ module.exports = {
   updateOrderStatus,
   detailOrders,
   ordersForStore,
-  cancelOrder
+  collectOrders,
+  cancelOrder,
 };
