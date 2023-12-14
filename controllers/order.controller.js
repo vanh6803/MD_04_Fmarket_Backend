@@ -277,7 +277,7 @@ const collectOrders = async (req, res, next) => {
       })
       .exec();
       console.log(orders);
-    res.status(200).json({ code: 200, data: orders, message: "get collect order success!" });
+    res.status(200).json({ code: 200, result: orders, message: "get collect order success!" });
 
   } catch (error) {
     console.error("Error in catch block:", error);
