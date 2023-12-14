@@ -280,6 +280,7 @@ const collectOrders = async (req, res, next) => {
           },
         },
       })
+      .populate('user_id') 
       .exec();
     console.log(orders);
     res.status(200).json({
