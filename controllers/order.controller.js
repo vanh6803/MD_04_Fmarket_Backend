@@ -135,7 +135,9 @@ const updateOrderStatus = async (req, res, next) => {
     }
 
     if (order.status == "Đã hủy") {
-      return res.status(409).json({ code: 409, message: "Don't change status order" });
+      return res
+        .status(409)
+        .json({ code: 409, message: "Don't change status order" });
     }
 
     await orderModel.order.findByIdAndUpdate(
@@ -174,7 +176,6 @@ const updateOrderStatus = async (req, res, next) => {
   }
 };
 
-
 const detailOrders = async (req, res, next) => {
   try {
     const { orderId } = req.params;
@@ -193,41 +194,43 @@ const detailOrders = async (req, res, next) => {
 
 const ordersForStore = async (req, res, next) => {
   try {
-    const store_id = req.query.store._id;
-    const status = req.query.status;
+    const store_id = req.store._id;
+    const { status } = req.query;
     //Lấy danh sách sản phẩm thuộc cửa hàng
     const products = await productModel.product.find({ store_id }).lean();
 
-    //Lấy danh sách đơn hàng
-    const orders = [];
-
-    for (const product of products) {
-      const options = await optionModel.option
-        .find({ product_id: product._id })
-        .lean();
-
-      for (const option of options) {
-        const optionOrders = await orderModel.order
-          .find({ "productsOrder.option_id": option._id, status: status })
-          .sort({ updatedAt: -1 })
-          .populate(["user_id", "info_id"])
+    // Get orders for the products
+    const orders = await Promise.all(
+      products.map(async (product) => {
+        const options = await optionModel.option
+          .find({ product_id: product._id })
           .lean();
 
-        orders.push(...optionOrders);
-      }
-    }
+        const optionOrders = await Promise.all(
+          options.map(async (option) => {
+            return orderModel.order
+              .find({ "productsOrder.option_id": option._id, status })
+              .sort({ updatedAt: -1 })
+              .populate(["user_id", "info_id"])
+              .lean();
+          })
+        );
+
+        return optionOrders.flat();
+      })
+    );
 
     const result = await Promise.all(
-      orders.map(async (order) => {
+      orders.flat().map(async (order) => {
         const productsOrder = await Promise.all(
           order.productsOrder.map(async (productOrder) => {
-            const option = await optionModel.option
+            const { option_id } = await optionModel.option
               .findById(productOrder.option_id)
               .lean()
-              .populate("product_id"); // Use lean to convert Mongoose document to plain JavaScript object
+              .populate("product_id");
 
             return {
-              option_id: option,
+              option_id,
               quantity: productOrder.quantity,
             };
           })
@@ -248,10 +251,11 @@ const ordersForStore = async (req, res, next) => {
 
     return res.status(200).json({
       code: 200,
-      result: result,
+      result,
       message: "Retrieved orders successfully for the store",
     });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
@@ -261,7 +265,8 @@ const collectOrders = async (req, res, next) => {
     const { storeId } = req.params;
 
     // Find orders with the "Đã giao hàng" status and the specified storeId
-    const orders = await orderModel.order.find({ status: "Đã giao hàng" })
+    const orders = await orderModel.order
+      .find({ status: "Đã giao hàng" })
       .populate({
         path: "productsOrder",
         populate: {
@@ -276,13 +281,16 @@ const collectOrders = async (req, res, next) => {
         },
       })
       .exec();
-      console.log(orders);
-    res.status(200).json({ code: 200, result: orders, message: "get collect order success!" });
-
+    console.log(orders);
+    res.status(200).json({
+      code: 200,
+      result: orders,
+      message: "get collect order success!",
+    });
   } catch (error) {
     console.error("Error in catch block:", error);
     return res.status(500).json({ code: 500, message: error.message });
-  }  
+  }
 };
 
 const cancelOrder = async (req, res, next) => {
@@ -311,7 +319,7 @@ const cancelOrder = async (req, res, next) => {
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
-}
+};
 
 module.exports = {
   createOrder,
