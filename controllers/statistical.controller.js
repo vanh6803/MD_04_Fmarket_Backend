@@ -53,7 +53,7 @@ const calculateRevenueAllTime = async (req, res, next) => {
     return res.status(200).json({
       code: 200,
       message: `Tất cả doanh thu của cửa hàng`,
-      data: { totalRevenue },
+      data: revenue,
     });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });

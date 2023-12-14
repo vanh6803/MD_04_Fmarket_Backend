@@ -74,4 +74,6 @@ router.delete(
   controller.deleteProduct
 );
 
+router.post("/send-email", middleware.checkToken, controller.sendEmailToStore);
+
 module.exports = router;
