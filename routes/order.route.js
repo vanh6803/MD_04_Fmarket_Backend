@@ -25,6 +25,6 @@ router.get(
 // hủy order
 router.get('/cancel-order', middleware.checkToken, controller.cancelOrder)
 
-router.get('/collect-order/:storeId', controller.collectOrders);
+router.get('/collect-order',middleware.checkToken, middleware.checkStoreExits ,controller.collectOrders);
 
 module.exports = router;

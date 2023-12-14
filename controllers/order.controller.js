@@ -262,7 +262,7 @@ const ordersForStore = async (req, res, next) => {
 
 const collectOrders = async (req, res, next) => {
   try {
-    const { storeId } = req.params;
+    const storeId = req.store._id;
 
     // Find orders with the "Đã giao hàng" status and the specified storeId
     const orders = await orderModel.order
