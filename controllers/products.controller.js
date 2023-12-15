@@ -339,19 +339,23 @@ const getProductsByStore = async (req, res, next) => {
 
     const products = await productModel.product
       .find({ store_id, is_active: true })
+      .populate("option")
       .skip(skip)
       .limit(itemsPerPage)
       .lean();
 
     const result = await Promise.all(
       products.map(async (product) => {
-        const { _id, name, discounted, store_id, category_id, option } = product;
-        const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
-        const averageRate = await getAverageRate(product._id);
-        const image = await getImageHotOption(product._id);
+        const { _id, name, discounted, store_id, category_id, option } =
+          product;
         const totalSoldQuantity = await calculateTotalSoldQuantity(
           product.option
         );
+        console.log(product.option);
+        const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
+        const averageRate = await getAverageRate(product._id);
+        const image = await getImageHotOption(product._id);
+
         return {
           _id,
           name,
@@ -393,6 +397,7 @@ const getSimilarProducts = async (req, res) => {
         _id: { $ne: productId },
         is_active: true,
       })
+      .populate("option")
       .limit(5)
       .lean();
 
@@ -455,7 +460,7 @@ const getAverageRate = async (product_id) => {
 const calculateTotalSoldQuantity = async (options) => {
   try {
     let totalSoldQuantity = 0;
-
+    console.log(options);
     for (const optionId of options) {
       const option = await optionModel.option.findById(optionId);
       totalSoldQuantity += option.soldQuantity || 0;
