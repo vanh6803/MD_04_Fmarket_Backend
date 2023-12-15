@@ -94,7 +94,7 @@ const getOrdersByUserId = async (req, res, next) => {
               .populate("product_id");
 
             return {
-              option: option,
+              option_id: option,
               quantity: productOrder.quantity,
             };
           })
@@ -255,7 +255,7 @@ const ordersForStore = async (req, res, next) => {
 
             console.log(option);
             return {
-              option,
+              option_id: option,
               quantity: productOrder.quantity,
             };
           })
