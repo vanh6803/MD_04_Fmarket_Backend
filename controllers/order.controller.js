@@ -244,13 +244,14 @@ const ordersForStore = async (req, res, next) => {
       orders.flat().map(async (order) => {
         const productsOrder = await Promise.all(
           order.productsOrder.map(async (productOrder) => {
-            const { option_id } = await optionModel.option
+            const option = await optionModel.option
               .findById(productOrder.option_id)
               .lean()
               .populate("product_id");
 
+            console.log(option);
             return {
-              option_id,
+              option,
               quantity: productOrder.quantity,
             };
           })
@@ -300,7 +301,7 @@ const collectOrders = async (req, res, next) => {
           },
         },
       })
-      .populate('user_id') 
+      .populate("user_id")
       .exec();
     console.log(orders);
     res.status(200).json({
