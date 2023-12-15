@@ -345,11 +345,13 @@ const getProductsByStore = async (req, res, next) => {
 
     const result = await Promise.all(
       products.map(async (product) => {
-        const { _id, name, discounted, store_id, category_id } = product;
+        const { _id, name, discounted, store_id, category_id, option } = product;
         const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
         const averageRate = await getAverageRate(product._id);
         const image = await getImageHotOption(product._id);
-
+        const totalSoldQuantity = await calculateTotalSoldQuantity(
+          product.option
+        );
         return {
           _id,
           name,
@@ -360,6 +362,7 @@ const getProductsByStore = async (req, res, next) => {
           minPrice,
           averageRate,
           review: product.product_review.length,
+          soldQuantity: totalSoldQuantity,
         };
       })
     );
@@ -395,13 +398,15 @@ const getSimilarProducts = async (req, res) => {
 
     const result = await Promise.all(
       similarProducts.map(async (similarProduct) => {
-        const { _id, name, discounted } = similarProduct;
+        const { _id, name, discounted, option } = similarProduct;
         const { minPrice, maxPrice } = await getMinMaxPrices(
           similarProduct._id
         );
         const averageRate = await getAverageRate(similarProduct._id);
         const image = await getImageHotOption(similarProduct._id);
-
+        const totalSoldQuantity = await calculateTotalSoldQuantity(
+          similarProduct.option
+        );
         return {
           _id,
           name,
@@ -410,6 +415,7 @@ const getSimilarProducts = async (req, res) => {
           minPrice,
           averageRate,
           review: similarProduct.product_review.length,
+          soldQuantity: totalSoldQuantity,
         };
       })
     );
