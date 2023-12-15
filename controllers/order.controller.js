@@ -180,11 +180,31 @@ const detailOrders = async (req, res, next) => {
   try {
     const { orderId } = req.params;
 
-    const orders = await orderModel.order.findById(orderId);
+    const orderDetail = await orderModel.order
+      .findById(orderId)
+      .populate("user_id", "email username full_name role_id is_active")
+      .populate({
+        path: "productsOrder",
+        populate: {
+          path: "option_id",
+          model: "option",
+          populate: {
+            path: "product_id",
+            model: "product",
+            select: "name",
+          },
+        },
+      })
+      .populate("info_id");
+
+    // Kiểm tra xem order có tồn tại không
+    if (!orderDetail) {
+      return res.status(404).json({ error: "Order not found" });
+    }
 
     return res.status(200).json({
       code: 200,
-      result: orders,
+      result: orderDetail,
       message: "created order successfully",
     });
   } catch (error) {
