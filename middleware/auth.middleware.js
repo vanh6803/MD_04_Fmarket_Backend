@@ -4,7 +4,6 @@ const storeModel = require("../models/Store");
 
 const checkToken = async (req, res, next) => {
   let header_token = req.header("Authorization");
-  console.log("header_token: ", header_token);
   if (typeof header_token == "undefined" || typeof header_token == null) {
     return res.status(403).json({ message: "unknown token" });
   }
