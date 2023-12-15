@@ -53,7 +53,7 @@ const calculateRevenueAllTime = async (req, res, next) => {
     return res.status(200).json({
       code: 200,
       message: `Tất cả doanh thu của cửa hàng`,
-      data: revenue,
+      data: totalRevenue,
     });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
@@ -64,14 +64,14 @@ const calculateRevenueByMonth = async (req, res, next) => {
   try {
     // Extract store_id and month from the request
     const { store_id, month } = req.query;
-    
+    const currentYear = new Date().getFullYear();//năm hiện tại
     const revenueByMonth = await orderModel.order.aggregate([
       {
         $match: {
           "status": "Đã giao hàng",
           "createdAt": {
-            $gte: new Date(`2023-${month}-01T00:00:00.000Z`),
-            $lt: new Date(`2023-${month}-31T23:59:59.999Z`),
+            $gte: new Date(`${currentYear}-${month}-01T00:00:00.000Z`),
+            $lt: new Date(`${currentYear}-${month}-31T23:59:59.999Z`),
           }
         },
       },
@@ -170,6 +170,7 @@ const calculateSoldQuantityByProductAndStore = async (req, res, next) => {
           },
           totalSoldQuantity: { $sum: "$productsOrder.quantity" },
           productDetails: { $first: "$product_info" },
+          productImages: { $push: "$order_options.image" }, // Lấy danh sách link ảnh sản phẩm
         },
       },
       {
@@ -178,20 +179,25 @@ const calculateSoldQuantityByProductAndStore = async (req, res, next) => {
           product_id: "$_id.product_id",
           store_id: "$_id.store_id",
           totalSoldQuantity: "$totalSoldQuantity",
-          productDetails: 1, // Include productDetails in the result
+          productDetails: {
+            name: "$productDetails.name",
+            image: { $arrayElemAt: ["$productImages", 0] }, // Lấy link ảnh đầu tiên
+            // Thêm các trường khác nếu cần
+          },
         },
       },
-    ]).sort({totalSoldQuantity: -1});
+    ]).sort({ totalSoldQuantity: -1 });
 
     return res.status(200).json({
       code: 200,
-      message: "Thống kê số lượng sản phẩm đã bán theo product_id và store_id",
+      message: "Thống kê số lượng sản phẩm đã bán",
       data: soldQuantityByProductAndStore,
     });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
+
 
 const getTopStoreByRevenue = async (req, res, next) => {
   try {
