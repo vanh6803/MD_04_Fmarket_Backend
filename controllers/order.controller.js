@@ -191,7 +191,11 @@ const detailOrders = async (req, res, next) => {
           populate: {
             path: "product_id",
             model: "product",
-            select: "name",
+            select: "name store_id",
+            populate: {
+              path: "store_id",
+              model: "store",
+            },
           },
         },
       })
