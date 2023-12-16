@@ -258,7 +258,13 @@ const ordersForStore = async (req, res, next) => {
       .populate("user_id")
       .exec();
 
-    return res.status(200).json({ code: 200, data: foundOrders });
+    return res
+      .status(200)
+      .json({
+        code: 200,
+        data: foundOrders,
+        message: "Retrieved orders successfully for the store",
+      });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ code: 500, message: error.message });
