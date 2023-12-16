@@ -23,7 +23,7 @@ router.get(
   controller.ordersForStore
 );
 // hủy order
-router.get("/cancel-order", middleware.checkToken, controller.cancelOrder);
+router.get("/cancel-order/:orderId", middleware.checkToken, controller.cancelOrder);
 
 router.get(
   "/collect-order",

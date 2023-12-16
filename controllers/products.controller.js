@@ -460,7 +460,6 @@ const getAverageRate = async (product_id) => {
 const calculateTotalSoldQuantity = async (options) => {
   try {
     let totalSoldQuantity = 0;
-    console.log(options);
     for (const optionId of options) {
       const option = await optionModel.option.findById(optionId);
       totalSoldQuantity += option.soldQuantity || 0;
