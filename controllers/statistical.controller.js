@@ -344,10 +344,104 @@ const getTopProductByRevenue = async (req, res, next) => {
   }
 }
 
+const getTotalRevenueByTimePeriodAndStatus = async (year, month, quarter) => {
+  try {
+    const matchStage = {
+      $match: {
+        status: "Đã giao hàng",
+        createdAt: {
+          $gte: new Date(year, month - 1, 1),
+          $lt: new Date(year, month, 1),
+        },
+      },
+    };
+
+    if (quarter) {
+      matchStage.$match.createdAt.$gte = new Date(year, (quarter - 1) * 3, 1);
+      matchStage.$match.createdAt.$lt = new Date(year, (quarter - 1) * 3 + 3, 1);
+    }
+
+    const result = await orderModel.order.aggregate([
+      matchStage,
+      {
+        $unwind: "$productsOrder",
+      },
+      {
+        $lookup: {
+          from: "options",
+          localField: "productsOrder.option_id",
+          foreignField: "_id",
+          as: "optionInfo",
+        },
+      },
+      {
+        $unwind: "$optionInfo",
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "optionInfo.product_id",
+          foreignField: "_id",
+          as: "productInfo",
+        },
+      },
+      {
+        $unwind: "$productInfo",
+      },
+      {
+        $lookup: {
+          from: "stores",
+          localField: "productInfo.store_id",
+          foreignField: "_id",
+          as: "storeInfo",
+        },
+      },
+      {
+        $unwind: "$storeInfo",
+      },
+      {
+        $group: {
+          _id: "$storeInfo._id",
+          storeName: { $first: "$storeInfo.name" },
+          totalRevenue: { $sum: "$total_price" },
+        },
+      },
+    ]);
+
+    return result;
+  } catch (error) {
+    console.error("Error fetching total revenue with store info:", error);
+    throw error;
+  }
+};
+
+const revenueAllStoreByMonth = async (req, res, next) => {
+  const currentYear = new Date().getFullYear();
+  const { month } = req.query;
+  try {
+    return res.status(200).json({
+      code: 200,
+      message: `Doanh thu các store theo tháng ${month} name ${currentYear}`,
+      data: getTotalRevenueByTimePeriodAndStatus(currentYear, month),
+    });
+  } catch (error) {
+    
+  }
+}
+
+// getTotalRevenueByTimePeriodAndStatus(2023, null, 2) 
+//   .then((result) => {
+//     console.log("Total Revenue for Quarter 2, 2023 (Đã giao hàng):", result);
+//   })
+//   .catch((error) => {
+//     console.error("Error:", error);
+//   });
+
 module.exports = {
   calculateRevenueAllTime,
   calculateRevenueByMonth,
   calculateSoldQuantityByProductAndStore,
   getTopStoreByRevenue,
-  getTopProductByRevenue
+  getTopProductByRevenue,
+  revenueAllStoreByMonth
 };
