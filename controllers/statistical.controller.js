@@ -265,7 +265,6 @@ const getTopStoreByRevenue = async (req, res, next) => {
       },
     ]);
 
-    console.log(top5Stores);
     return res.status(200).json({
       code: 200,
       message: "Top 5 cửa hàng có doanh thu cao nhất!",
@@ -333,7 +332,6 @@ const getTopProductByRevenue = async (req, res, next) => {
       },
     ]);
 
-    console.log(top5Products);
     return res.status(200).json({
       code: 200,
       message: "Top 5 sản phẩm có doanh thu cao nhất!",

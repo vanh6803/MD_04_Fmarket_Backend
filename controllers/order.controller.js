@@ -65,6 +65,7 @@ const createOrder = async (req, res, next) => {
       .status(201)
       .json({ code: 201, message: "created order successfully" });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
@@ -140,7 +141,7 @@ const updateOrderStatus = async (req, res, next) => {
         .json({ code: 409, message: "Don't change status order" });
     }
 
-    await orderModel.order.findByIdAndUpdate(
+    const updatedOrder = await orderModel.order.findByIdAndUpdate(
       orderId,
       { status },
       { new: true }
@@ -172,6 +173,7 @@ const updateOrderStatus = async (req, res, next) => {
       .status(200)
       .json({ code: 200, message: "Update status order successfully" });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
@@ -220,63 +222,45 @@ const ordersForStore = async (req, res, next) => {
   try {
     const store_id = req.store._id;
     const { status } = req.query;
-    //Lấy danh sách sản phẩm thuộc cửa hàng
-    const products = await productModel.product.find({ store_id }).lean();
 
-    // Get orders for the products
-    const orders = await Promise.all(
-      products.map(async (product) => {
-        const options = await optionModel.option
-          .find({ product_id: product._id })
-          .lean();
+    // Tìm tất cả các sản phẩm thuộc cửa hàng
+    const productsInStore = await productModel.product.find({ store_id });
 
-        const optionOrders = await Promise.all(
-          options.map(async (option) => {
-            return orderModel.order
-              .find({ "productsOrder.option_id": option._id, status })
-              .sort({ updatedAt: -1 })
-              .populate(["user_id", "info_id"])
-              .lean();
-          })
-        );
+    // Lấy danh sách id của các sản phẩm thuộc cửa hàng
+    const productIds = productsInStore.map((product) => product._id);
 
-        return optionOrders.flat();
+    // Tìm tất cả các option thuộc các sản phẩm của cửa hàng
+    const optionsInStore = await optionModel.option.find({
+      product_id: { $in: productIds },
+    });
+
+    // Lấy danh sách id của các option thuộc cửa hàng
+    const optionIds = optionsInStore.map((option) => option._id);
+
+    // Tìm tất cả các đơn đặt hàng chứa các option thuộc cửa hàng
+    const foundOrders = await orderModel.order
+      .find({
+        "productsOrder.option_id": { $in: optionIds },
+        status: status || { $exists: true }, // Lọc theo trạng thái nếu được chỉ định
       })
-    );
-
-    const result = await Promise.all(
-      orders.flat().map(async (order) => {
-        const productsOrder = await Promise.all(
-          order.productsOrder.map(async (productOrder) => {
-            const option = await optionModel.option
-              .findById(productOrder.option_id)
-              .lean()
-              .populate("product_id");
-
-            console.log(option);
-            return {
-              option_id: option,
-              quantity: productOrder.quantity,
-            };
-          })
-        );
-
-        return {
-          _id: order._id,
-          user_id: order.user_id,
-          info_id: order.info_id,
-          productsOrder,
-          total_price: order.total_price,
-          status: order.status,
-          createdAt: order.createdAt,
-          updatedAt: order.updatedAt,
-        };
+      .populate({
+        path: "productsOrder",
+        populate: {
+          path: "option_id",
+          model: "option",
+          populate: {
+            path: "product_id",
+            model: "product",
+          },
+        },
       })
-    );
+      .populate("info_id")
+      .populate("user_id")
+      .exec();
 
     return res.status(200).json({
       code: 200,
-      result,
+      result: foundOrders,
       message: "Retrieved orders successfully for the store",
     });
   } catch (error) {
