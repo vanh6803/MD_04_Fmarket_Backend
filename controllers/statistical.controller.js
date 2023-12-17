@@ -342,6 +342,8 @@ const getTopProductByRevenue = async (req, res, next) => {
   }
 }
 
+// 2023-11-29T16:15:29.307+00:00
+
 const getTotalRevenueByTimePeriodAndStatus = async (year, month, quarter) => {
   try {
     const matchStage = {
@@ -349,14 +351,14 @@ const getTotalRevenueByTimePeriodAndStatus = async (year, month, quarter) => {
         status: "Đã giao hàng",
         createdAt: {
           $gte: new Date(year, month - 1, 1),
-          $lt: new Date(year, month, 1),
+          $lt: new Date(year, month, 0),
         },
       },
     };
 
     if (quarter) {
       matchStage.$match.createdAt.$gte = new Date(year, (quarter - 1) * 3, 1);
-      matchStage.$match.createdAt.$lt = new Date(year, (quarter - 1) * 3 + 3, 1);
+      matchStage.$match.createdAt.$lt = new Date(year, (quarter - 1) * 3 + 3, 31);
     }
 
     const result = await orderModel.order.aggregate([
@@ -401,9 +403,12 @@ const getTotalRevenueByTimePeriodAndStatus = async (year, month, quarter) => {
         $group: {
           _id: "$storeInfo._id",
           storeName: { $first: "$storeInfo.name" },
-          totalRevenue: { $sum: "$total_price" },
+          totalRevenue: { $sum: { $ifNull: ["$total_price", 0] } },
         },
       },
+      {
+        $sort: { totalRevenue: -1 } 
+      }
     ]);
 
     return result;
@@ -417,23 +422,51 @@ const revenueAllStoreByMonth = async (req, res, next) => {
   const currentYear = new Date().getFullYear();
   const { month } = req.query;
   try {
+    const result = await getTotalRevenueByTimePeriodAndStatus(currentYear, month);
+    console.log('result: ', result);
+
+    if (result === null || result.length === 0) {
+      return res.status(200).json({
+        code: 200,
+        message: `Không có doanh thu của store nào trong tháng ${month} `,
+        data: result
+      });
+    }
+
     return res.status(200).json({
       code: 200,
-      message: `Doanh thu các store theo tháng ${month} name ${currentYear}`,
-      data: getTotalRevenueByTimePeriodAndStatus(currentYear, month),
+      message: `Doanh thu các store theo tháng ${month} năm ${currentYear}`,
+      data: result
     });
   } catch (error) {
-    
+    return res.status(500).json({ code: 500, message: error.message });
   }
 }
 
-// getTotalRevenueByTimePeriodAndStatus(2023, null, 2) 
-//   .then((result) => {
-//     console.log("Total Revenue for Quarter 2, 2023 (Đã giao hàng):", result);
-//   })
-//   .catch((error) => {
-//     console.error("Error:", error);
-//   });
+const revenueAllStoreByQuarter = async (req, res, next) => {
+  const currentYear = new Date().getFullYear();
+  const { quarter } = req.query;
+  try {
+    const result = await getTotalRevenueByTimePeriodAndStatus(currentYear, null, quarter);
+    console.log('result: ', result);
+
+    if (result === null || result.length === 0) {
+      return res.status(200).json({
+        code: 200,
+        message: `Không có doanh thu theo quí ${quarter}.`,
+        data: result
+      });
+    }
+
+    return res.status(200).json({
+      code: 200,
+      message: `Doanh thu các store theo quý thứ ${quarter}`,
+      data: result
+    });
+  } catch (error) {
+    return res.status(500).json({ code: 500, message: error.message });
+  }
+}
 
 module.exports = {
   calculateRevenueAllTime,
@@ -441,5 +474,6 @@ module.exports = {
   calculateSoldQuantityByProductAndStore,
   getTopStoreByRevenue,
   getTopProductByRevenue,
-  revenueAllStoreByMonth
+  revenueAllStoreByMonth,
+  revenueAllStoreByQuarter,
 };
