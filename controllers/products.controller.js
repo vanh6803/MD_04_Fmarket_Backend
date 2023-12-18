@@ -765,14 +765,8 @@ const getTopProduct = async (req, res, next) => {
 
     const store = await storeModel.store.findOne({ account_id: accountId });
 
-    if (!store) {
-      return res.status(404).json({
-        code: 404,
-        message: "Store not found for the given account",
-      });
-    }
-
-    const productsInStore = await productModel.product.find({ store_id: store._id })
+    if (store) {
+      const productsInStore = await productModel.product.find({ store_id: store._id })
     .select('_id')
     .exec();
     
@@ -786,6 +780,20 @@ const getTopProduct = async (req, res, next) => {
     return res.status(200).json({
       code: 200,
       result: optionsNotInStore,
+      message: "Get options successfully",
+      });
+    }
+
+    const optionsInStore = await optionModel.option
+    .find({})
+    .sort({ soldQuantity: -1 })
+    .limit(10)
+    .populate("product_id")
+    .exec();
+
+    return res.status(200).json({
+      code: 200,
+      result: optionsInStore,
       message: "Get options successfully",
     });
   } catch (error) {
