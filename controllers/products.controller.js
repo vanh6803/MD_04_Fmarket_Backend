@@ -5,6 +5,7 @@ const storeModel = require("../models/Store");
 const productRateModel = require("../models/ProductRate");
 const orderModel = require("../models/Orders");
 const { sendEmail } = require("../utils/NodemailerService");
+const jwt = require("jsonwebtoken");
 
 const addProduct = async (req, res, next) => {
   try {
@@ -192,12 +193,14 @@ const detailProduct = async (req, res, next) => {
 
 const getProductsByCategory = async (req, res, next) => {
   try {
-    const { uid } = req.query;
+    const { token } = req.query;
     const itemsPerPage = parseInt(req.query.itemsPerPage) || 1000000;
     const queryCategory = req.query.category;
 
+    const data = jwt.verify(token, process.env.KEY_TOKEN);
+
     const userStore = await storeModel.store
-      .findOne({ account_id: uid })
+      .findOne({ account_id: data.userId })
       .lean();
 
     const categories = await categoryModel.category
