@@ -756,9 +756,24 @@ const changeActiveProduct = async (req, res, next) => {
 };
 
 const getTopProduct = async (req, res, next) => {
-  try {
-    const topSoldProducts = await optionModel.option
-      .find({})
+  try{
+    const {accountId} = req.query
+
+    const store = await storeModel.store.findOne({ account_id: accountId });
+
+    if (!store) {
+      return res.status(404).json({
+        code: 404,
+        message: "Store not found for the given account",
+      });
+    }
+
+    const productsInStore = await productModel.product.find({ store_id: store._id })
+    .select('_id')
+    .exec();
+    
+    const optionsNotInStore = await optionModel.option
+      .find({ product_id: { $nin: productsInStore } })
       .sort({ soldQuantity: -1 })
       .limit(10)
       .populate("product_id")
@@ -766,13 +781,32 @@ const getTopProduct = async (req, res, next) => {
 
     return res.status(200).json({
       code: 200,
-      result: topSoldProducts,
-      message: "Get top sold products successfully",
+      result: optionsNotInStore,
+      message: "Get options successfully",
     });
   } catch (error) {
     return res.status(500).json({ code: 500, message: error.message });
   }
 };
+
+// const getTopProduct = async (req, res, next) => {
+//   try {
+//     const topSoldProducts = await optionModel.option
+//       .find({})
+//       .sort({ soldQuantity: -1 })
+//       .limit(10)
+//       .populate("product_id")
+//       .exec();
+
+//     return res.status(200).json({
+//       code: 200,
+//       result: topSoldProducts,
+//       message: "Get top sold products successfully",
+//     });
+//   } catch (error) {
+//     return res.status(500).json({ code: 500, message: error.message });
+//   }
+// };
 
 const sendEmailToStore = async (req, res, next) => {
   try {
