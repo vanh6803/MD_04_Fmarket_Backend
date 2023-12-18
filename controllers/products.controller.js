@@ -192,8 +192,13 @@ const detailProduct = async (req, res, next) => {
 
 const getProductsByCategory = async (req, res, next) => {
   try {
+    const { uid } = req.query;
     const itemsPerPage = parseInt(req.query.itemsPerPage) || 1000000;
     const queryCategory = req.query.category;
+
+    const userStore = await storeModel.store
+      .findOne({ account_id: uid })
+      .lean();
 
     const categories = await categoryModel.category
       .find(queryCategory ? { _id: queryCategory } : null)
@@ -201,8 +206,18 @@ const getProductsByCategory = async (req, res, next) => {
 
     const result = await Promise.all(
       categories.map(async (category) => {
+        const productQuery = {
+          category_id: category._id,
+          is_active: true,
+        };
+
+        // If the user has a store, exclude products from their store
+        if (userStore) {
+          productQuery.store_id = { $ne: userStore._id };
+        }
+
         const limitedProducts = await productModel.product
-          .find({ category_id: category._id, is_active: true })
+          .find(productQuery)
           .populate("option")
           .limit(itemsPerPage)
           .lean();
@@ -248,8 +263,99 @@ const getProductsByCategory = async (req, res, next) => {
   }
 };
 
+// const getAllProducts = async (req, res, next) => {
+//   const populateFields = ["store_id", "category_id", "option"];
+//   try {
+//     const {
+//       page = 1,
+//       itemsPerPage = 1000000000,
+//       category,
+//       store,
+//       discounted,
+//       isActive,
+//       sort,
+//       uid,
+//     } = req.query;
+//     const skip = (page - 1) * itemsPerPage;
+
+//     const userStore = await storeModel.store
+//       .findOne({ account_id: uid })
+//       .lean();
+
+//     let query = productModel.product.find().lean();
+
+//     if (category) {
+//       query.where("category_id").in(category);
+//     }
+
+//     if (store) {
+//       query.where("store_id").in(store);
+//     }
+
+//     if (userStore) {
+//       // If the user has a store, exclude products from their store
+//       query.where("store_id").nin(userStore._id);
+//     }
+
+//     if (discounted) {
+//       query.where("discounted").equals(true);
+//     }
+
+//     if (isActive) {
+//       query.where("is_active").equals(true);
+//     }
+
+//     query.sort(sort ? { updatedAt: sort } : { createAt: 1 });
+
+//     const totalProducts = await productModel.product.countDocuments();
+//     const totalPages = Math.ceil(totalProducts / itemsPerPage);
+
+//     const products = await query
+//       .skip(skip)
+//       .limit(itemsPerPage)
+//       .populate(populateFields)
+//       .exec();
+
+//     const result = await Promise.all(
+//       products.map(async (product) => {
+//         const { _id, name, discounted, store_id, category_id, option } =
+//           product;
+//         const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
+//         const averageRate = await getAverageRate(product._id);
+//         const image = await getImageHotOption(product._id);
+//         const totalSoldQuantity = await calculateTotalSoldQuantity(
+//           product.option
+//         );
+
+//         return {
+//           _id,
+//           name,
+//           store_id,
+//           category_id,
+//           discounted,
+//           image,
+//           minPrice,
+//           averageRate,
+//           review: product.product_review.length,
+//           active: product.is_active,
+//           soldQuantity: totalSoldQuantity,
+//         };
+//       })
+//     );
+
+//     return res.status(200).json({
+//       code: 200,
+//       result,
+//       totalPages,
+//       message: "get all product successful",
+//     });
+//   } catch (error) {
+//     console.log(error.message);
+//     return res.status(500).json({ code: 500, message: error.message });
+//   }
+// };
+
 const getAllProducts = async (req, res, next) => {
-  const populateFields = ["store_id", "category_id", "option"];
   try {
     const {
       page = 1,
@@ -259,64 +365,30 @@ const getAllProducts = async (req, res, next) => {
       discounted,
       isActive,
       sort,
+      uid,
     } = req.query;
+
     const skip = (page - 1) * itemsPerPage;
+    const userStore = await storeModel.store
+      .findOne({ account_id: uid })
+      .lean();
 
-    let query = productModel.product.find().lean();
+    const query = buildProductQuery({
+      category,
+      store,
+      userStore,
+      discounted,
+      isActive,
+      sort,
+    });
 
-    if (category) {
-      query.where("category_id").in(category);
-    }
+    const [totalProducts, totalPages, products] = await Promise.all([
+      productModel.product.countDocuments(query),
+      calculateTotalPages(itemsPerPage),
+      executeQuery(query, skip, itemsPerPage),
+    ]);
 
-    if (store) {
-      query.where("store_id").in(store);
-    }
-
-    if (discounted) {
-      query.where("discounted").equals(true);
-    }
-
-    if (isActive) {
-      query.where("is_active").equals(true);
-    }
-
-    query.sort(sort ? { updatedAt: sort } : { createAt: 1 });
-
-    const totalProducts = await productModel.product.countDocuments();
-    const totalPages = Math.ceil(totalProducts / itemsPerPage);
-
-    const products = await query
-      .skip(skip)
-      .limit(itemsPerPage)
-      .populate(populateFields)
-      .exec();
-
-    const result = await Promise.all(
-      products.map(async (product) => {
-        const { _id, name, discounted, store_id, category_id, option } =
-          product;
-        const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
-        const averageRate = await getAverageRate(product._id);
-        const image = await getImageHotOption(product._id);
-        const totalSoldQuantity = await calculateTotalSoldQuantity(
-          product.option
-        );
-
-        return {
-          _id,
-          name,
-          store_id,
-          category_id,
-          discounted,
-          image,
-          minPrice,
-          averageRate,
-          review: product.product_review.length,
-          active: product.is_active,
-          soldQuantity: totalSoldQuantity,
-        };
-      })
-    );
+    const result = await processProducts(products);
 
     return res.status(200).json({
       code: 200,
@@ -325,9 +397,70 @@ const getAllProducts = async (req, res, next) => {
       message: "get all product successful",
     });
   } catch (error) {
-    console.log(error.message);
+    console.error(error.message);
     return res.status(500).json({ code: 500, message: error.message });
   }
+};
+
+const buildProductQuery = ({
+  category,
+  store,
+  userStore,
+  discounted,
+  isActive,
+  sort,
+}) => {
+  let query = productModel.product.find().lean();
+
+  if (category) query.where("category_id").in(category);
+  if (store) query.where("store_id").in(store);
+  if (userStore) query.where("store_id").nin(userStore._id);
+  if (discounted === "true") query.where("discounted").equals(true);
+  if (isActive === "true") query.where("is_active").equals(true);
+
+  query.sort(sort ? { updatedAt: sort } : { createAt: 1 });
+  return query;
+};
+
+const calculateTotalPages = async (itemsPerPage) => {
+  const totalProducts = await productModel.product.countDocuments();
+  return Math.ceil(totalProducts / itemsPerPage);
+};
+
+const executeQuery = async (query, skip, itemsPerPage) => {
+  return query
+    .skip(skip)
+    .limit(itemsPerPage)
+    .populate(["store_id", "category_id", "option"])
+    .exec();
+};
+
+const processProducts = async (products) => {
+  return Promise.all(
+    products.map(async (product) => {
+      const { _id, name, discounted, store_id, category_id, option } = product;
+      const { minPrice, maxPrice } = await getMinMaxPrices(product._id);
+      const averageRate = await getAverageRate(product._id);
+      const image = await getImageHotOption(product._id);
+      const totalSoldQuantity = await calculateTotalSoldQuantity(
+        product.option
+      );
+
+      return {
+        _id,
+        name,
+        store_id,
+        category_id,
+        discounted,
+        image,
+        minPrice,
+        averageRate,
+        review: product.product_review.length,
+        active: product.is_active,
+        soldQuantity: totalSoldQuantity,
+      };
+    })
+  );
 };
 
 const getProductsByStore = async (req, res, next) => {
