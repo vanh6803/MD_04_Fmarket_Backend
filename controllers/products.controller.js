@@ -373,11 +373,15 @@ const getAllProducts = async (req, res, next) => {
 
     const skip = (page - 1) * itemsPerPage;
 
-    const data = jwt.verify(token, process.env.KEY_TOKEN);
+    let data;
 
-    const userStore = await storeModel.store
-      .findOne({ account_id: data.userId })
-      .lean();
+    let userStore;
+    if (token) {
+      data = jwt.verify(token, process.env.KEY_TOKEN);
+      userStore = await storeModel.store
+        .findOne({ account_id: data.userId })
+        .lean();
+    }
 
     const query = buildProductQuery({
       category,
